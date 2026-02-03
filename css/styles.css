@@ -1,0 +1,57 @@
+/* Estilos simples, limpios y responsive */
+:root{
+  --max-width: 800px;
+  --gap: 1rem;
+  --bg: #ffffff;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --border: #e5e7eb;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;
+  line-height:1.5;
+  color:#111827;
+  background:linear-gradient(180deg,#f8fafc,#fff);
+}
+.container{
+  max-width:var(--max-width);
+  margin:0 auto;
+  padding:1rem;
+}
+.site-header{
+  border-bottom:1px solid var(--border);
+  background:transparent;
+}
+.h1, h1{margin:0 0 .25rem 0}
+.lead{margin:0;color:var(--muted)}
+.form-section, .result-section{margin-top:1.25rem}
+.form{background:var(--bg);border:1px solid var(--border);padding:1rem;border-radius:8px}
+fieldset{border:none;padding:0;margin:0}
+legend{font-weight:600;margin-bottom:.5rem}
+.form-row{display:flex;flex-direction:column;margin-bottom:.75rem}
+label{font-weight:600;margin-bottom:.25rem}
+.required{color:#dc2626;margin-left:.25rem}
+input[type="text"],input[type="date"],input[type="url"]{
+  padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;font-size:1rem
+}
+input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
+.form-actions{display:flex;justify-content:flex-start;margin-top:.5rem}
+.btn-primary, .btn-secondary{padding:.5rem .75rem;border-radius:6px;border:0;cursor:pointer;font-weight:600}
+.btn-primary{background:var(--accent);color:var(--accent-contrast)}
+.btn-primary:focus{outline:3px solid rgba(37,99,235,.2)}
+.btn-secondary{background:#f3f4f6;color:#111827;border:1px solid var(--border)}
+.result-card{margin-top:.5rem;padding:1rem;border-radius:8px;background:#fff;border:1px solid var(--border)}
+.reference{min-height:48px;padding:.25rem;color:#111827}
+.result-actions{display:flex;gap:.5rem;align-items:center;margin-top:.5rem}
+.notice{background:#fff4e5;border-radius:6px;padding:.5rem;margin-top:.5rem;border:1px solid #fde3b7;color:#92400e}
+.site-footer{border-top:1px solid var(--border);margin-top:1.5rem;padding:1rem 0;color:var(--muted);font-size:.9rem}
+@media (min-width:640px){
+  .form-row{flex-direction:row;gap:1rem;align-items:center}
+  .form-row label{width:220px;margin-bottom:0}
+  .form-row input{flex:1}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

@@ -1,1 +1,81 @@
 <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generador de referencias APA 7 — Modelos de IA</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1>Generador de referencias APA 7 para modelos de IA</h1>
+      <p class="lead">Crea referencias en formato APA 7 para modelos de lenguaje de inteligencia artificial.</p>
+    </div>
+  </header>
+
+  <main class="container" id="main">
+    <section aria-labelledby="form-title" class="form-section">
+      <h2 id="form-title">Crear referencia</h2>
+
+      <form id="refForm" class="form" novalidate>
+        <fieldset>
+          <legend>Información del modelo</legend>
+
+          <div class="form-row">
+            <label for="organization">Organización responsable <span class="required">*</span></label>
+            <input type="text" id="organization" name="organization" required placeholder="Ej. OpenAI">
+          </div>
+
+          <div class="form-row">
+            <label for="modelName">Nombre del modelo <span class="required">*</span></label>
+            <input type="text" id="modelName" name="modelName" required placeholder="Ej. GPT-4">
+          </div>
+
+          <div class="form-row">
+            <label for="modelVersion">Versión del modelo</label>
+            <input type="text" id="modelVersion" name="modelVersion" placeholder="Ej. v4.1 (opcional)">
+          </div>
+
+          <div class="form-row">
+            <label for="accessDate">Fecha de consulta <span class="required">*</span></label>
+            <input type="date" id="accessDate" name="accessDate" required>
+          </div>
+
+          <div class="form-row">
+            <label for="platformUrl">URL de la plataforma <span class="required">*</span></label>
+            <input type="url" id="platformUrl" name="platformUrl" required placeholder="https://">
+          </div>
+
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Generar referencia</button>
+        </div>
+      </form>
+
+      <noscript>
+        <p class="notice">Para generar y copiar la referencia necesita habilitar JavaScript en su navegador.</p>
+      </noscript>
+    </section>
+
+    <section aria-labelledby="result-title" class="result-section">
+      <h2 id="result-title">Referencia generada</h2>
+      <div class="result-card">
+        <article id="reference" class="reference" aria-live="polite">Aquí se mostrará la referencia en formato APA 7.</article>
+        <div class="result-actions">
+          <button id="copyBtn" type="button" class="btn-secondary">Copiar referencia</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>Formato sugerido: Organización. (Año). Nombre del modelo (Versión) [Modelo de lenguaje]. Consultado el DD de MM de AAAA, de URL</small>
+    </div>
+  </footer>
+
+  <script src="js/app.js" defer></script>
+</body>
+</html>
