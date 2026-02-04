@@ -55,9 +55,14 @@ input[type="text"],input[type="date"],input[type="url"]{
 input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
 .form-actions{display:flex;justify-content:flex-start;margin-top:.5rem}
 .btn-primary, .btn-secondary{padding:.5rem .75rem;border-radius:6px;border:0;cursor:pointer;font-weight:600}
-.btn-primary{background:var(--accent);color:var(--accent-contrast)}
-.btn-primary:focus{outline:3px solid rgba(37,99,235,.2)}
+.btn-primary{background:#29473f;color:var(--accent-contrast)}
+.btn-primary:focus{outline:3px solid rgba(41,71,63,.2)}
 .btn-secondary{background:#f3f4f6;color:#111827;border:1px solid var(--border)}
+
+.welcome{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+.welcome-img{max-height:90px;width:auto;display:block}
+.welcome-text{margin:0;font-size:1rem;line-height:1.4;font-weight:600}
+
 .result-card{margin-top:.5rem;padding:1rem;border-radius:8px;background:#fff;border:1px solid var(--border)}
 .reference{min-height:48px;padding:.25rem;color:#111827}
 .result-actions{display:flex;gap:.5rem;align-items:center;margin-top:.5rem}

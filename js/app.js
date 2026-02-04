@@ -123,16 +123,32 @@
   }
 
   function buildAPA({organization, modelName, modelVersion, accessDate, platformUrl}){
-    const year = accessDate ? parseLocalDate(accessDate).getFullYear() : '';
-    const versionPart = modelVersion ? ` (${modelVersion})` : '';
-    const displayDate = accessDate ? `Consultado el ${formatDateSpanish(accessDate)}, de ${platformUrl}` : `Recuperado de ${platformUrl}`;
+    // Helper para escapar texto y evitar inyección HTML (solo permitimos <em> explícitamente)
+    function escapeHtml(str){
+      return String(str || '').replace(/[&<>\"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; });
+    }
 
-    // Ejemplo: OpenAI. (2026). GPT-4 (v4.1) [Modelo de lenguaje]. Consultado el 3 de febrero de 2026, de https://...
+    // Tomar la fecha de consulta si existe, o la fecha actual como valor por defecto
+    const dateObj = accessDate ? parseLocalDate(accessDate) : new Date();
+    const year = dateObj ? dateObj.getFullYear() : '';
+    const day = dateObj ? dateObj.getDate() : '';
+    const monthName = dateObj ? new Intl.DateTimeFormat('es-ES',{month:'long'}).format(dateObj) : '';
+    const dateParen = `(${year}${day ? `, ${day} de ${monthName}` : ''})`;
+
+    // Escapar valores de usuario antes de inyectar en HTML
+    const orgSafe = escapeHtml(organization);
+    const modelSafe = escapeHtml(modelName);
+    const versionSafe = escapeHtml(modelVersion);
+    const urlSafe = escapeHtml(platformUrl);
+
+    // Asegurar que la versión incluya la palabra "versión" por consistencia con la plantilla
+    const versionPart = versionSafe ? ` (versión ${versionSafe})` : '';
+
+    // Construir la referencia con el nombre del modelo en cursivas (<em>)
     const pieces = [];
-    pieces.push(`${organization}.`);
-    pieces.push(`(${year}).`);
-    pieces.push(`${modelName}${versionPart} [Modelo de lenguaje].`);
-    pieces.push(displayDate);
+    pieces.push(`${orgSafe} ${dateParen}.`);
+    pieces.push(`<em>${modelSafe}</em>${versionPart} [Modelo de lenguaje grande].`);
+    if(urlSafe) pieces.push(urlSafe);
 
     return pieces.join(' ');
   }
@@ -173,7 +189,8 @@
     };
 
     const apa = buildAPA(values);
-    referenceEl.textContent = apa;
+    // `apa` contiene HTML seguro (solo <em> intencional) — mostrar con innerHTML para cursivas
+    referenceEl.innerHTML = apa;
     referenceEl.focus();
   });
 
