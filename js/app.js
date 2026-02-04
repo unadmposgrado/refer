@@ -23,7 +23,23 @@
     "DeepSeek": { organizacion: "DeepSeek AI", url: "https://www.deepseek.com" },
     "Grok": { organizacion: "xAI", url: "https://x.ai" },
     "Perplexity": { organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
-    "Leo": { organizacion: "Brave Software", url: "https://brave.com/leo" },
+  };
+
+  // Catálogo indexado por dominio para autocompletado desde URL
+  // Estructura: { "dominio": { modelo: "...", organizacion: "...", url: "..." } }
+  const catalogoIAporDominio = {
+    "chatgpt.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
+    "chat.openai.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
+    "openai.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
+    "gemini.google.com": { modelo: "Gemini", organizacion: "Google DeepMind", url: "https://gemini.google.com" },
+    "claude.ai": { modelo: "Claude", organizacion: "Anthropic", url: "https://www.anthropic.com/claude" },
+    "copilot.microsoft.com": { modelo: "Copilot", organizacion: "Microsoft", url: "https://copilot.microsoft.com" },
+    "www.meta.ai": { modelo: "LLaMA", organizacion: "Meta AI", url: "https://www.meta.ai/" },
+    "chat.qwen.ai": { modelo: "Qwen", organizacion: "Alibaba Cloud", url: "https://chat.qwen.ai" },
+    "chat.deepseek.com": { modelo: "DeepSeek", organizacion: "DeepSeek AI", url: "https://chat.deepseek.com/" },
+    "grok.com": { modelo: "Grok", organizacion: "xAI", url: "https://grok.com/" },
+    "perplexity.ai": { modelo: "Perplexity", organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
+    "www.perplexity.ai": { modelo: "Perplexity", organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
   };
 
   // Elementos del DOM para interacción con el catálogo
@@ -97,6 +113,88 @@
       // No forzamos ninguna copia en inputs ocultos: el valor final se calculará al enviar.
       // Solo limpiamos posibles mensajes de error mientras escribe.
       if(this.value && this.value.trim().length) this.setCustomValidity('');
+    });
+  }
+
+  // Función auxiliar para extraer dominio de una URL
+  function extractDomainFromUrl(urlStr){
+    if(!urlStr || typeof urlStr !== 'string') return null;
+    try{
+      const url = new URL(urlStr);
+      return url.hostname.toLowerCase();
+    }catch(e){
+      return null;
+    }
+  }
+
+  // Autocompletado desde URL: escuchar cambios en el campo "URL de la plataforma"
+  if(platformUrlInput){
+    platformUrlInput.addEventListener('blur', function(){
+      const urlValue = (this.value || '').trim();
+      if(!urlValue) return;
+
+      // Extraer el dominio de la URL
+      const domain = extractDomainFromUrl(urlValue);
+      if(!domain) return;
+
+      // Buscar en el catálogo por dominio
+      const entry = catalogoIAporDominio[domain];
+
+      if(entry){
+        // Caso: coincidencia encontrada
+        // Autocompletar modelo, organización, URL y fecha de consulta
+        const modelName = entry.modelo;
+        const organization = entry.organizacion;
+        const officialUrl = entry.url;
+
+        // Buscar el modelo en el select para activarlo
+        if(modelSelect){
+          const foundOption = Array.from(modelSelect.options).find(opt => opt.value === modelName);
+          if(foundOption){
+            // Seleccionar el modelo en el select (esto también dispara el change listener)
+            modelSelect.value = modelName;
+            modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          }else{
+            // El modelo no está en el select, activar "Otro modelo"
+            modelSelect.value = 'otro';
+            modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            if(modelOther){
+              modelOther.value = modelName;
+            }
+          }
+        }
+
+        // Autocompletar organización
+        organizationInput.value = organization;
+
+        // Reemplazar la URL por la oficial del catálogo
+        this.value = officialUrl;
+
+        // Autocompletar fecha de consulta con la fecha actual
+        const today = new Date();
+        const isoDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const accessDateInput = document.getElementById('accessDate');
+        if(accessDateInput && !accessDateInput.value){
+          accessDateInput.value = isoDate;
+        }
+      }else{
+        // Caso: sin coincidencia
+        // Activar "Otro modelo" para que el usuario pueda escribir manualmente
+        if(modelSelect){
+          modelSelect.value = 'otro';
+          modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        // Limpiar organización (el usuario debe llenarla manualmente)
+        organizationInput.value = '';
+        // Mantener la URL que escribió el usuario
+        // Autocompletar fecha de consulta con la fecha actual
+        const today = new Date();
+        const isoDate = today.toISOString().split('T')[0];
+        const accessDateInput = document.getElementById('accessDate');
+        if(accessDateInput && !accessDateInput.value){
+          accessDateInput.value = isoDate;
+        }
+      }
     });
   }
 

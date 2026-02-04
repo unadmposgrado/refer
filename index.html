@@ -53,9 +53,23 @@
           Esta herramienta te ayuda a generar referencias bibliográficas en formato APA para contenidos producidos con modelos de lenguaje de inteligencia artificial.
         </p>
       </div>
+             <ul>
+              <li>Los campos marcados con <span class="required">*</span> son obligatorios.</li>
+              <li>Puedes pegar la URL de la IA que utilizaste y el formulario intentará autocompletar algunos campos.</li>
+              <li>También puedes elegir el modelo de una lista o seleccionar "Otro modelo" para escribir el nombre manualmente.</li>
+            </ul>
+      
       <form id="refForm" class="form" novalidate>
         <fieldset>
           <legend>Información del modelo</legend>
+            <p>
+            Por favor, completa los siguientes campos para generar la referencia.
+
+            </p>
+          <div class="form-row">
+            <label for="platformUrl">URL de la plataforma <span class="required">*</span></label>
+            <input type="url" id="platformUrl" name="platformUrl" required placeholder="https://">
+          </div>
 
           <!-- La fila de 'Organización responsable' se movió para aparecer después del 'Nombre del modelo' -->
 
@@ -64,9 +78,8 @@
             <div class="input-group">
               <select id="modelSelect" name="modelSelect" required aria-describedby="modelHelp">
                 <option value="">-- Selecciona un modelo --</option>
-                <!-- Las opciones de modelos serán añadidas dinámicamente desde js/app.js basadas en content/listado.md -->
+                
               </select>
-              <small id="modelHelp" class="form-help">Puedes elegir un modelo del catálogo o seleccionar "Otro modelo" para escribir uno manualmente.</small>
             </div>
           </div>
 
@@ -89,11 +102,6 @@
           <div class="form-row">
             <label for="accessDate">Fecha de consulta <span class="required">*</span></label>
             <input type="date" id="accessDate" name="accessDate" required>
-          </div>
-
-          <div class="form-row">
-            <label for="platformUrl">URL de la plataforma <span class="required">*</span></label>
-            <input type="url" id="platformUrl" name="platformUrl" required placeholder="https://">
           </div>
 
         </fieldset>
