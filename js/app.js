@@ -6,14 +6,138 @@
   const referenceEl = document.getElementById('reference');
   const copyBtn = document.getElementById('copyBtn');
 
+  // ------------------------------
+  // Catálogo de modelos de lenguaje IA
+  // Fuente: content/listado.md
+  // NOTA: Este objeto debe actualizarse manualmente con los datos exactos del archivo
+  // `content/listado.md`. No inventar modelos, organizaciones ni URLs.
+  // Estructura:
+  // const catalogoModelosIA = {
+  //   "ChatGPT": { organizacion: "OpenAI", url: "https://chatgpt.com" },
+  //   ...
+  // };
+  // ------------------------------
+  const catalogoModelosIA = {
+    "ChatGPT": { organizacion: "OpenAI", url: "https://chatgpt.com" },
+    "Gemini": { organizacion: "Google DeepMind", url: "https://gemini.google.com" },
+    "Claude": { organizacion: "Anthropic", url: "https://www.anthropic.com/claude" },
+    "LLaMA": { organizacion: "Meta AI", url: "https://ai.meta.com/llama" },
+    "Mistral": { organizacion: "Mistral AI", url: "https://mistral.ai" },
+    "Qwen": { organizacion: "Alibaba Cloud", url: "https://qwenlm.ai" },
+    "DeepSeek": { organizacion: "DeepSeek AI", url: "https://www.deepseek.com" },
+    "Command": { organizacion: "Cohere", url: "https://cohere.com/models" },
+    "Phi": { organizacion: "Microsoft Research", url: "https://www.microsoft.com/en-us/research/project/phi" },
+    "Falcon": { organizacion: "Technology Innovation Institute (TII)", url: "https://falconllm.tii.ae" },
+    "StableLM": { organizacion: "Stability AI", url: "https://stability.ai/stablelm" },
+    "Baichuan": { organizacion: "Baichuan Intelligent Technology", url: "https://www.baichuan-ai.com" },
+    "Yi": { organizacion: "01.AI", url: "https://www.01.ai" },
+    "InternLM": { organizacion: "Shanghai AI Laboratory", url: "https://internlm.intern-ai.org.cn" },
+    "Grok": { organizacion: "xAI", url: "https://x.ai" },
+    "Amazon Nova": { organizacion: "Amazon Web Services (AWS)", url: "https://aws.amazon.com/ai" },
+    "Ernie": { organizacion: "Baidu", url: "https://ernie.baidu.com" },
+    "Aleph Alpha": { organizacion: "Aleph Alpha GmbH", url: "https://www.aleph-alpha.com" },
+    "GPT-NeoX": { organizacion: "EleutherAI", url: "https://www.eleuther.ai" },
+    "BLOOM": { organizacion: "BigScience Consortium", url: "https://bigscience.huggingface.co" }
+  };
+
+  // Elementos del DOM para interacción con el catálogo
+  const modelSelect = document.getElementById('modelSelect');
+  const modelOther = document.getElementById('modelOther');
+  // Fila que contiene el label + input para "Otro modelo" — se muestra/oculta completa para mantener orden visual
+  const modelOtherRow = document.getElementById('modelOtherRow');
+  const organizationInput = document.getElementById('organization');
+  const platformUrlInput = document.getElementById('platformUrl');
+
+  // Poblar el <select> con las entradas del catálogo (orden en el objeto)
+  (function populateModelSelect(){
+    if(!modelSelect) return;
+    Object.keys(catalogoModelosIA).forEach(function(modelName){
+      const opt = document.createElement('option');
+      opt.value = modelName;
+      opt.textContent = modelName;
+      modelSelect.appendChild(opt);
+    });
+    const optOtro = document.createElement('option');
+    optOtro.value = 'otro';
+    optOtro.textContent = 'Otro modelo';
+    modelSelect.appendChild(optOtro);
+  })();
+
+  // Gestionar cambios en la selección del modelo
+  if(modelSelect){
+    modelSelect.addEventListener('change', function(){
+      const v = this.value;
+      if(!v){
+        // placeholder seleccionado
+        if(modelOtherRow) modelOtherRow.style.display = 'none';
+        if(modelOther) { modelOther.setAttribute('aria-hidden','true'); modelOther.required = false; modelOther.value = ''; }
+        organizationInput.value = '';
+        platformUrlInput.value = '';
+        this.removeAttribute('aria-disabled');
+        return;
+      }
+
+      if(v === 'otro'){
+        // Mostrar fila para escribir otro modelo (se oculta/monitored como bloque para mantener orden)
+        if(modelOtherRow) modelOtherRow.style.display = '';
+        if(modelOther){ modelOther.removeAttribute('aria-hidden'); modelOther.required = true; modelOther.value = ''; modelOther.focus(); }
+        // Limpiar organización y URL para que el usuario pueda escribirlas
+        organizationInput.value = '';
+        platformUrlInput.value = '';
+        // Indicar visualmente que el select está en modo "otro"
+        this.setAttribute('aria-disabled','true');
+        return;
+      }
+
+      // Modelo del catálogo seleccionado: autocompletar organización y URL
+      if(modelOtherRow) modelOtherRow.style.display = 'none';
+      if(modelOther){ modelOther.setAttribute('aria-hidden','true'); modelOther.required = false; }
+      this.removeAttribute('aria-disabled');
+
+      const entry = catalogoModelosIA[v];
+      if(entry){
+        organizationInput.value = entry.organizacion || '';
+        platformUrlInput.value = entry.url || '';
+      }else{
+        organizationInput.value = '';
+        platformUrlInput.value = '';
+      }
+    });
+  }
+
+  // Mantener sincronía si el usuario escribe manualmente en "Otro modelo"
+  if(modelOther){
+    modelOther.addEventListener('input', function(){
+      // No forzamos ninguna copia en inputs ocultos: el valor final se calculará al enviar.
+      // Solo limpiamos posibles mensajes de error mientras escribe.
+      if(this.value && this.value.trim().length) this.setCustomValidity('');
+    });
+  }
+
+  function parseLocalDate(dateStr){
+    // Si ya es Date, devolverlo
+    if(dateStr instanceof Date) return dateStr;
+    if(!dateStr) return null;
+    // <input type="date"> devuelve 'YYYY-MM-DD' — crear Date en zona local para evitar desfase por UTC
+    const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+    if(isoMatch){
+      const y = Number(isoMatch[1]);
+      const m = Number(isoMatch[2]) - 1; // monthIndex
+      const d = Number(isoMatch[3]);
+      return new Date(y, m, d);
+    }
+    // Fallback a parsing estándar para otros formatos
+    return new Date(dateStr);
+  }
+
   function formatDateSpanish(dateStr){
-    if(!dateStr) return '';
-    const d = new Date(dateStr);
+    const d = parseLocalDate(dateStr);
+    if(!d) return '';
     return new Intl.DateTimeFormat('es-ES',{day:'numeric',month:'long',year:'numeric'}).format(d);
   }
 
   function buildAPA({organization, modelName, modelVersion, accessDate, platformUrl}){
-    const year = accessDate ? new Date(accessDate).getFullYear() : '';
+    const year = accessDate ? parseLocalDate(accessDate).getFullYear() : '';
     const versionPart = modelVersion ? ` (${modelVersion})` : '';
     const displayDate = accessDate ? `Consultado el ${formatDateSpanish(accessDate)}, de ${platformUrl}` : `Recuperado de ${platformUrl}`;
 
@@ -36,9 +160,27 @@
     }
 
     const data = new FormData(form);
+
+    // Determinar el nombre del modelo final: seleccionado en el <select> o escrito en "Otro modelo"
+    let finalModelName = '';
+    const selValue = modelSelect ? modelSelect.value : '';
+    if(selValue === 'otro'){
+      finalModelName = (modelOther ? modelOther.value : '').trim();
+      if(!finalModelName){
+        // Forzar validación nativa mostrando un mensaje sobre el campo visible
+        if(modelOther){
+          modelOther.setCustomValidity('Por favor ingrese el nombre del modelo.');
+          modelOther.reportValidity();
+        }
+        return;
+      }
+    }else{
+      finalModelName = selValue ? selValue.trim() : '';
+    }
+
     const values = {
       organization: (data.get('organization') || '').trim(),
-      modelName: (data.get('modelName') || '').trim(),
+      modelName: finalModelName,
       modelVersion: (data.get('modelVersion') || '').trim(),
       accessDate: data.get('accessDate') || '',
       platformUrl: (data.get('platformUrl') || '').trim()

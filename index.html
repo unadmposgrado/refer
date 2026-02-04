@@ -3,33 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Generador de referencias APA 7 — Modelos de IA</title>
+  <title>Generador de referencias IA</title>
+  <link rel="icon" href="img/refer.png" type="image/png">
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Ajustes locales: hacer que los <select> compartan el mismo estilo que los inputs del formulario -->
+  <style>
+    /* Selects visualmente iguales a inputs */
+    .form-row select{
+      padding:.5rem .6rem;
+      border:1px solid var(--border);
+      border-radius:6px;
+      font-size:1rem;
+      background:#fff;
+      width:100%;
+    }
+    .form-row select:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
+    @media (min-width:640px){
+      .form-row select{flex:0 1 auto}
+    }
+
+    /* Agrupar select + ayuda en columna para mantener alineación con los inputs */
+    .form-row .input-group{
+      display:flex;
+      flex-direction:column;
+      gap:.35rem;
+      flex:1;
+      min-width:0;
+    }
+
+    /* Asegurar que la ayuda del campo quede en bloque y con separación adecuada */
+    .form-help{display:block;margin-top:0;color:var(--muted);font-size:.9rem}
+  </style>
 </head>
 <body>
   <header class="site-header">
     <div class="container">
-      <h1>Generador de referencias APA 7 para modelos de IA</h1>
-      <p class="lead">Crea referencias en formato APA 7 para modelos de lenguaje de inteligencia artificial.</p>
+      <img src="img/Banner SSA.png" alt="Banner SSA" class="header-banner">
+      <p class="lead">Generador de referencias para modelos de IA.</p>
     </div>
   </header>
 
   <main class="container" id="main">
     <section aria-labelledby="form-title" class="form-section">
-      <h2 id="form-title">Crear referencia</h2>
+      <h2 id="form-title">📖 Crear referencia</h2>
 
       <form id="refForm" class="form" novalidate>
         <fieldset>
           <legend>Información del modelo</legend>
 
+          <!-- La fila de 'Organización responsable' se movió para aparecer después del 'Nombre del modelo' -->
+
           <div class="form-row">
-            <label for="organization">Organización responsable <span class="required">*</span></label>
-            <input type="text" id="organization" name="organization" required placeholder="Ej. OpenAI">
+            <label for="modelSelect">Nombre del modelo <span class="required">*</span></label>
+            <div class="input-group">
+              <select id="modelSelect" name="modelSelect" required aria-describedby="modelHelp">
+                <option value="">-- Selecciona un modelo --</option>
+                <!-- Las opciones de modelos serán añadidas dinámicamente desde js/app.js basadas en content/listado.md -->
+              </select>
+              <small id="modelHelp" class="form-help">Puedes elegir un modelo del catálogo o seleccionar "Otro modelo" para escribir uno manualmente.</small>
+            </div>
+          </div>
+
+          <!-- Fila separada para el campo "Otro modelo" (por accesibilidad y orden visual) -->
+          <div class="form-row" id="modelOtherRow" style="display:none;">
+            <label for="modelOther">Nombre del modelo (otro) <span class="required">*</span></label>
+            <input type="text" id="modelOther" name="modelOther" placeholder="Escribe el nombre del modelo" aria-hidden="true">
           </div>
 
           <div class="form-row">
-            <label for="modelName">Nombre del modelo <span class="required">*</span></label>
-            <input type="text" id="modelName" name="modelName" required placeholder="Ej. GPT-4">
+            <label for="organization">Organización responsable <span class="required">*</span></label>
+            <input type="text" id="organization" name="organization" required placeholder="Ej. OpenAI">
           </div>
 
           <div class="form-row">
@@ -62,7 +105,7 @@
     <section aria-labelledby="result-title" class="result-section">
       <h2 id="result-title">Referencia generada</h2>
       <div class="result-card">
-        <article id="reference" class="reference" aria-live="polite">Aquí se mostrará la referencia en formato APA 7.</article>
+        <article id="reference" class="reference" aria-live="polite">Aquí se mostrará la referencia en formato APA.</article>
         <div class="result-actions">
           <button id="copyBtn" type="button" class="btn-secondary">Copiar referencia</button>
         </div>
@@ -72,7 +115,7 @@
 
   <footer class="site-footer">
     <div class="container">
-      <small>Formato sugerido: Organización. (Año). Nombre del modelo (Versión) [Modelo de lenguaje]. Consultado el DD de MM de AAAA, de URL</small>
+      <small>2026, Posgrado UnADM</small>
     </div>
   </footer>
 
