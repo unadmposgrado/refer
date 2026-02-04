@@ -1,4 +1,3 @@
-// Lógica mínima para generar y copiar la referencia APA 7 en español.
 // Nota: la fecha incluida en el paréntesis se toma del año de la "fecha de consulta" como valor por defecto.
 
 (function(){
@@ -8,9 +7,6 @@
 
   // ------------------------------
   // Catálogo de modelos de lenguaje IA
-  // Fuente: content/listado.md
-  // NOTA: Este objeto debe actualizarse manualmente con los datos exactos del archivo
-  // `content/listado.md`. No inventar modelos, organizaciones ni URLs.
   // Estructura:
   // const catalogoModelosIA = {
   //   "ChatGPT": { organizacion: "OpenAI", url: "https://chatgpt.com" },
@@ -21,23 +17,13 @@
     "ChatGPT": { organizacion: "OpenAI", url: "https://chatgpt.com" },
     "Gemini": { organizacion: "Google DeepMind", url: "https://gemini.google.com" },
     "Claude": { organizacion: "Anthropic", url: "https://www.anthropic.com/claude" },
+    "Copilot": { organizacion: "Microsoft", url: "https://copilot.microsoft.com" },
     "LLaMA": { organizacion: "Meta AI", url: "https://ai.meta.com/llama" },
-    "Mistral": { organizacion: "Mistral AI", url: "https://mistral.ai" },
     "Qwen": { organizacion: "Alibaba Cloud", url: "https://qwenlm.ai" },
     "DeepSeek": { organizacion: "DeepSeek AI", url: "https://www.deepseek.com" },
-    "Command": { organizacion: "Cohere", url: "https://cohere.com/models" },
-    "Phi": { organizacion: "Microsoft Research", url: "https://www.microsoft.com/en-us/research/project/phi" },
-    "Falcon": { organizacion: "Technology Innovation Institute (TII)", url: "https://falconllm.tii.ae" },
-    "StableLM": { organizacion: "Stability AI", url: "https://stability.ai/stablelm" },
-    "Baichuan": { organizacion: "Baichuan Intelligent Technology", url: "https://www.baichuan-ai.com" },
-    "Yi": { organizacion: "01.AI", url: "https://www.01.ai" },
-    "InternLM": { organizacion: "Shanghai AI Laboratory", url: "https://internlm.intern-ai.org.cn" },
     "Grok": { organizacion: "xAI", url: "https://x.ai" },
-    "Amazon Nova": { organizacion: "Amazon Web Services (AWS)", url: "https://aws.amazon.com/ai" },
-    "Ernie": { organizacion: "Baidu", url: "https://ernie.baidu.com" },
-    "Aleph Alpha": { organizacion: "Aleph Alpha GmbH", url: "https://www.aleph-alpha.com" },
-    "GPT-NeoX": { organizacion: "EleutherAI", url: "https://www.eleuther.ai" },
-    "BLOOM": { organizacion: "BigScience Consortium", url: "https://bigscience.huggingface.co" }
+    "Perplexity": { organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
+    "Leo": { organizacion: "Brave Software", url: "https://brave.com/leo" },
   };
 
   // Elementos del DOM para interacción con el catálogo
