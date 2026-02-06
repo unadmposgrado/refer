@@ -5,14 +5,8 @@
   const referenceEl = document.getElementById('reference');
   const copyBtn = document.getElementById('copyBtn');
 
-  // ------------------------------
-  // Catálogo de modelos de lenguaje IA
-  // Estructura:
-  // const catalogoModelosIA = {
-  //   "ChatGPT": { organizacion: "OpenAI", url: "https://chatgpt.com" },
-  //   ...
-  // };
-  // ------------------------------
+    // Catálogo de modelos de lenguaje IA
+  
   const catalogoModelosIA = {
     "ChatGPT": { organizacion: "OpenAI", url: "https://chatgpt.com" },
     "Gemini": { organizacion: "Google DeepMind", url: "https://gemini.google.com" },
@@ -26,7 +20,7 @@
   };
 
   // Catálogo indexado por dominio para autocompletado desde URL
-  // Estructura: { "dominio": { modelo: "...", organizacion: "...", url: "..." } }
+
   const catalogoIAporDominio = {
     "chatgpt.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
     "chat.openai.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
@@ -110,8 +104,8 @@
   // Mantener sincronía si el usuario escribe manualmente en "Otro modelo"
   if(modelOther){
     modelOther.addEventListener('input', function(){
-      // No forzamos ninguna copia en inputs ocultos: el valor final se calculará al enviar.
-      // Solo limpiamos posibles mensajes de error mientras escribe.
+      // No forzar ninguna copia en inputs ocultos: el valor final se calculará al enviar.
+      // Solo limpiar posibles mensajes de error mientras escribe.
       if(this.value && this.value.trim().length) this.setCustomValidity('');
     });
   }
