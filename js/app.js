@@ -17,6 +17,7 @@
     "DeepSeek": { organizacion: "DeepSeek AI", url: "https://www.deepseek.com" },
     "Grok": { organizacion: "xAI", url: "https://x.ai" },
     "Perplexity": { organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
+    "Consensus": { organizacion: "Consensus", url: "https://consensus.app" },
   };
 
   // Catálogo indexado por dominio para autocompletado desde URL
@@ -34,6 +35,7 @@
     "grok.com": { modelo: "Grok", organizacion: "xAI", url: "https://grok.com/" },
     "perplexity.ai": { modelo: "Perplexity", organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
     "www.perplexity.ai": { modelo: "Perplexity", organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
+    "consensus.app": { modelo: "Consensus", organizacion: "Consensus", url: "https://consensus.app" },
   };
 
   // Elementos del DOM para interacción con el catálogo
