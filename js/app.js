@@ -24,8 +24,6 @@
 
   const catalogoIAporDominio = {
     "chatgpt.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
-    "chat.openai.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
-    "openai.com": { modelo: "ChatGPT", organizacion: "OpenAI", url: "https://chatgpt.com" },
     "gemini.google.com": { modelo: "Gemini", organizacion: "Google DeepMind", url: "https://gemini.google.com" },
     "claude.ai": { modelo: "Claude", organizacion: "Anthropic", url: "https://www.anthropic.com/claude" },
     "copilot.microsoft.com": { modelo: "Copilot", organizacion: "Microsoft", url: "https://copilot.microsoft.com" },
@@ -33,7 +31,6 @@
     "chat.qwen.ai": { modelo: "Qwen", organizacion: "Alibaba Cloud", url: "https://chat.qwen.ai" },
     "chat.deepseek.com": { modelo: "DeepSeek", organizacion: "DeepSeek AI", url: "https://chat.deepseek.com/" },
     "grok.com": { modelo: "Grok", organizacion: "xAI", url: "https://grok.com/" },
-    "perplexity.ai": { modelo: "Perplexity", organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
     "www.perplexity.ai": { modelo: "Perplexity", organizacion: "Perplexity AI", url: "https://www.perplexity.ai" },
     "consensus.app": { modelo: "Consensus", organizacion: "Consensus", url: "https://consensus.app" },
   };
@@ -241,7 +238,7 @@
     // Construir la referencia con el nombre del modelo en cursivas (<em>)
     const pieces = [];
     pieces.push(`${orgSafe} ${dateParen}.`);
-    pieces.push(`<em>${modelSafe}</em>${versionPart} [Modelo de lenguaje grande].`);
+    pieces.push(`<em>${modelSafe}</em>${versionPart} [Modelo de lenguaje de gran escala].`);
     if(urlSafe) pieces.push(urlSafe);
 
     return pieces.join(' ');
