@@ -1,5 +1,25 @@
 // Nota: la fecha incluida en el paréntesis se toma del año de la "fecha de consulta" como valor por defecto.
 
+// 🔹 CONFIGURACIÓN SUPABASE (añade tu URL y API key manualmente)
+// const SUPABASE_URL = '<TU_SUPABASE_URL>';
+// const SUPABASE_ANON_KEY = '<TU_API_KEY>';
+// const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function checkSession() {
+  if (typeof supabaseClient === 'undefined') return;
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html';
+  }
+}
+
+// comprobar sesión al cargar la página
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkSession);
+} else {
+  checkSession();
+}
+
 (function(){
   const form = document.getElementById('refForm');
   const referenceEl = document.getElementById('reference');

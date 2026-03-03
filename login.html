@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar sesión - Referencias IA</title>
+  <link rel="icon" href="img/refer.png" type="image/png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <main class="container">
+    <section class="form-section">
+      <h2>Iniciar sesión</h2>
+      <form id="loginForm" class="form" novalidate>
+        <div class="form-row">
+          <label for="email">Correo electrónico <span class="required">*</span></label>
+          <input type="email" id="email" name="email" required placeholder="tu@ejemplo.com">
+        </div>
+        <div class="form-row">
+          <label for="password">Contraseña <span class="required">*</span></label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Entrar</button>
+        </div>
+      </form>
+      <p class="muted">
+        ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>2026, Posgrado UnADM</small>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/header.js" defer></script>
+  <script src="js/login.js" defer></script>
+</body>
+</html>

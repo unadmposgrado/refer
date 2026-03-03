@@ -36,7 +36,21 @@ body{
   align-items:center;
   height:60px;
 }
-.header-banner{
+
+/* acciones de la cabecera (login/registro) */
+.header-actions{
+  margin-left:auto;
+  display:flex;
+  gap:.5rem;
+}
+.header-actions button{
+  transition:transform .2s ease, background-color .2s ease, color .2s ease;
+}
+.header-actions button:hover{
+  transform:translateY(-2px);
+  background-color:var(--accent);
+  color:var(--accent-contrast);
+}.header-banner{
   height: 60px;
   width: auto;
 }
@@ -49,7 +63,7 @@ legend{font-weight:600;margin-bottom:.5rem}
 .form-row{display:flex;flex-direction:column;margin-bottom:.75rem}
 label{font-weight:600;margin-bottom:.25rem}
 .required{color:#dc2626;margin-left:.25rem}
-input[type="text"],input[type="date"],input[type="url"]{
+input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="url"]{
   padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;font-size:1rem
 }
 input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
