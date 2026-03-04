@@ -3,6 +3,7 @@
 // 🔹 CONFIGURACIÓN SUPABASE - usar cliente centralizado
 import { supabase } from './supabaseClient.js';
 import { initAuthListener } from './auth.js';
+import { saveCitation } from './citations.js';
 
 // ------------------------------------------------------
 // Autenticación: listener centralizado
@@ -302,6 +303,44 @@ initAuthListener();
     // `apa` contiene HTML seguro (solo <em> intencional) — mostrar con innerHTML para cursivas
     referenceEl.innerHTML = apa;
     referenceEl.focus();
+
+    // después de generar la referencia, intentar guardar en la tabla citations
+    (async function(){
+      // determinar campos de modelo / personalizados
+      let model_id = null;
+      let model_name_custom = null;
+      let organization_custom = null;
+
+      const selValue = modelSelect ? modelSelect.value : '';
+      if (selValue && selValue !== 'otro') {
+        model_id = selValue;
+      } else {
+        // modelo ingresado manualmente
+        model_name_custom = finalModelName || null;
+        organization_custom = values.organization || null;
+      }
+
+      const citationData = {
+        model_id,
+        model_name_custom,
+        organization_custom,
+        version: values.modelVersion,
+        consulta_fecha: values.accessDate,
+        tema: null,
+        prompt: null,
+        llm_response: null,
+        citation_text: apa
+      };
+
+      try {
+        const { error } = await saveCitation(citationData);
+        if (error) {
+          console.error('Error guardando cita:', error);
+        }
+      } catch (err) {
+        console.error('Error inesperado guardando cita:', err);
+      }
+    })();
   });
 
   copyBtn.addEventListener('click', async function(){
