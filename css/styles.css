@@ -163,4 +163,43 @@ input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
   .form-row label{width:220px;margin-bottom:0}
   .form-row input{flex:1}
 }
+
+/* componentes nuevos para dashboard y administración */
+.dashboard-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.dashboard-cards .card {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 1rem;
+  border-radius: 8px;
+  flex: 1 1 150px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-table th,
+.admin-table td {
+  border: 1px solid var(--border);
+  padding: .5rem;
+  text-align: left;
+}
+
+#filters {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+#filters label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

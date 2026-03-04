@@ -48,9 +48,16 @@ export async function getUserCitations() {
     throw new Error('No hay usuario autenticado');
   }
 
+  // traer también el nombre del modelo mediante la relación
   const { data, error } = await supabase
     .from('citations')
-    .select('*')
+    .select(`
+      *,
+      models (
+        id,
+        name
+      )
+    `)
     .order('created_at', { ascending: false });
 
   return { data, error };

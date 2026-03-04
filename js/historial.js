@@ -51,9 +51,13 @@ async function renderHistorial() {
     // model display
     let modelDisplay = '';
     if (c.model_id) {
-      // intentar obtener label de un <select> existente (puede no haber ninguno)
-      const opt = document.querySelector(`select option[value="${c.model_id}"]`);
-      modelDisplay = opt ? opt.textContent : c.model_id;
+      // si la relación fue cargada, usarla
+      if (c.models && c.models.name) {
+        modelDisplay = c.models.name;
+      } else {
+        // modelo eliminado o no encontrado
+        modelDisplay = 'Modelo eliminado';
+      }
     } else {
       modelDisplay = c.model_name_custom || '';
     }
