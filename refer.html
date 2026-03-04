@@ -43,7 +43,7 @@
         <img src="img/referenciaPC.png" alt="Generador de referencias IA" class="welcome-img">
         <p class="welcome-text">
           <strong>Bienvenido/a.</strong><br>
-          Esta herramienta te ayuda a generar referencias bibliográficas en formato APA para contenidos producidos con modelos de lenguaje de inteligencia artificial.
+          Esta herramienta recupera elementos del estilo APA para generar referencias bibliográficas de contenidos producidos con modelos de lenguaje de inteligencia artificial.
         </p>
       </div>
              <ul>
@@ -119,6 +119,9 @@
     </div>
   </footer>
 
+  <!-- Supabase se necesita aquí porque el header de usuario realiza logout y
+       app.js comprueba la sesión del usuario. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/header.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/login.js" defer></script>

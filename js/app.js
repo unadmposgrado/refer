@@ -1,9 +1,11 @@
 // Nota: la fecha incluida en el paréntesis se toma del año de la "fecha de consulta" como valor por defecto.
 
-// 🔹 CONFIGURACIÓN SUPABASE (añade tu URL y API key manualmente)
-// const SUPABASE_URL = '<TU_SUPABASE_URL>';
-// const SUPABASE_ANON_KEY = '<TU_API_KEY>';
-// const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 🔹 CONFIGURACIÓN SUPABASE - necesario para verificar sesión y cerrar sesión
+const SUPABASE_URL = 'https://oyefwyqevymkcdpsgvkw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_hUqkZIvfFq-8lfwXEp9N9w_2gDd1ywP';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// exponer el cliente a otros scripts (header.js lo usa para logout)
+window.supabaseClient = supabaseClient;
 
 async function checkSession() {
   if (typeof supabaseClient === 'undefined') return;

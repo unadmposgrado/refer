@@ -6,32 +6,6 @@
   <title>Generador de referencias IA</title>
   <link rel="icon" href="img/refer.png" type="image/png">
   <link rel="stylesheet" href="css/styles.css">
-  <!-- Ajustes locales: hacer que los <select> compartan el mismo estilo que los inputs del formulario -->
-  <style>
-    /* Selects visualmente iguales a inputs */
-    .form-row select{
-      padding:.5rem .6rem;
-      border:1px solid var(--border);
-      border-radius:6px;
-      font-size:1rem;
-      background:#fff;
-      width:100%;
-    }
-    .form-row select:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
-    @media (min-width:640px){
-      .form-row select{flex:0 1 auto}
-    }
-
-    /* Agrupar select + ayuda en columna para mantener alineación con los inputs */
-    .form-row .input-group{
-      display:flex;
-      flex-direction:column;
-      gap:.35rem;
-      flex:1;
-      min-width:0;
-    }
-    .form-help{display:block;margin-top:0;color:var(--muted);font-size:.9rem}
-  </style>
 </head>
 <body>
   <div id="siteHeader"></div>
@@ -43,74 +17,13 @@
         <img src="img/referenciaPC.png" alt="Generador de referencias IA" class="welcome-img">
         <p class="welcome-text">
           <strong>Bienvenido/a.</strong><br>
-          Esta herramienta te ayuda a generar referencias bibliográficas en formato APA para contenidos producidos con modelos de lenguaje de inteligencia artificial.
+          Esta herramienta recupera elementos del estilo APA para generar referencias bibliográficas de contenidos producidos con modelos de lenguaje de inteligencia artificial.
         </p>
-      </div>
-             <ul>
-              <li>Los campos marcados con<span class="required">*</span> son obligatorios.</li>
-              <li>Puedes pegar la URL de la IA que utilizaste y el formulario intentará autocompletar algunos campos.</li>
-              <li>También puedes elegir el modelo de una lista o seleccionar "Otro modelo" para escribir el nombre manualmente.</li>
-            </ul>
-      
-      <form id="refForm" class="form" novalidate>
-        <fieldset>
-          <legend>Información del modelo</legend>
-          <div class="form-row">
-            <label for="platformUrl">URL de la plataforma <span class="required">*</span></label>
-            <input type="url" id="platformUrl" name="platformUrl" required placeholder="https://">
-          </div>
-
-          <div class="form-row">
-            <label for="modelSelect">Nombre del modelo <span class="required">*</span></label>
-            <div class="input-group">
-              <select id="modelSelect" name="modelSelect" required aria-describedby="modelHelp">
-                <option value="">-- Selecciona un modelo --</option>
-                
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row" id="modelOtherRow" style="display:none;">
-            <label for="modelOther">Nombre del modelo (otro) <span class="required">*</span></label>
-            <input type="text" id="modelOther" name="modelOther" placeholder="Escribe el nombre del modelo" aria-hidden="true">
-          </div>
-
-          <div class="form-row">
-            <label for="organization">Organización responsable <span class="required">*</span></label>
-            <input type="text" id="organization" name="organization" required placeholder="Ej. OpenAI">
-          </div>
-
-          <div class="form-row">
-            <label for="modelVersion">Versión del modelo</label>
-            <input type="text" id="modelVersion" name="modelVersion" placeholder="Ej. 4.1 (opcional)">
-          </div>
-
-          <div class="form-row">
-            <label for="accessDate">Fecha de consulta <span class="required">*</span></label>
-            <input type="date" id="accessDate" name="accessDate" required>
-          </div>
-
-        </fieldset>
-
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">Generar referencia</button>
-        </div>
-      </form>
-
-      <noscript>
-        <p class="notice">Para generar y copiar la referencia necesita habilitar JavaScript en su navegador.</p>
-      </noscript>
     </section>
-
     <section aria-labelledby="result-title" class="result-section">
-      <h2 id="result-title">Referencia generada</h2>
-      <div class="result-card">
-        <article id="reference" class="reference" aria-live="polite">Aquí se mostrará la referencia en formato APA.</article>
-        <div class="result-actions">
-          <button id="copyBtn" type="button" class="btn-secondary">Copiar referencia</button>
-        </div>
-      </div>
-    </section>
+        <p class="welcome-text" style="text-align: center;">
+          Debes iniciar sesión para usar el generador. Si no tienes cuenta, regístrate, es gratis y rápido.
+        </p>
   </main>
 
   <footer class="site-footer">
