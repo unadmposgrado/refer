@@ -2,10 +2,15 @@
 // Carga el HTML del encabezado desde "header.html" y lo inserta en cada página.
 // También ejecuta inicializaciones de login/registro después de cargarlo.
 
+import { supabase } from './supabaseClient.js';
+import { initLogin } from './login.js';
+import { initRegister } from './registro.js';
+import { getUser } from './auth.js';
+
 function loadHeader() {
   // decidir qué archivo traer según la página actual
   let file = 'header.html';
-  if (window.location.pathname.endsWith('refer.html')) {
+  if (location.pathname.endsWith('refer.html')) {
     file = 'header-logged.html';
   }
 
@@ -25,8 +30,8 @@ function loadHeader() {
       if (loginBtn) {
         loginBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          if (!window.location.pathname.endsWith('login.html')) {
-            window.location.href = 'login.html';
+          if (!location.pathname.endsWith('login.html')) {
+            location.href = 'login.html';
           }
         });
       }
@@ -34,8 +39,8 @@ function loadHeader() {
       if (registerBtn) {
         registerBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          if (!window.location.pathname.endsWith('registro.html')) {
-            window.location.href = 'registro.html';
+          if (!location.pathname.endsWith('registro.html')) {
+            location.href = 'registro.html';
           }
         });
       }
@@ -57,14 +62,12 @@ function loadHeader() {
         });
 
         // intentar cargar foto de perfil desde Supabase si hay sesión
-        function tryLoadAvatar(){
-          if (typeof supabaseClient === 'undefined') return;
-          supabaseClient.auth.getUser().then(({ data: { user } }) => {
-            if (user && user.user_metadata && user.user_metadata.avatar_url) {
-              const imgEl = document.querySelector('.profile-img');
-              if (imgEl) imgEl.src = user.user_metadata.avatar_url;
-            }
-          }).catch(()=>{});
+        async function tryLoadAvatar(){
+          const user = await getUser().catch(()=>null);
+          if (user && user.user_metadata && user.user_metadata.avatar_url) {
+            const imgEl = document.querySelector('.profile-img');
+            if (imgEl) imgEl.src = user.user_metadata.avatar_url;
+          }
         }
         // esperamos a que otros scripts (app.js) inicialicen el cliente
         setTimeout(tryLoadAvatar, 0);
@@ -73,14 +76,14 @@ function loadHeader() {
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async function(e) {
           e.preventDefault();
-          if (typeof supabaseClient !== 'undefined') {
+          if (typeof supabase !== 'undefined') {
             try {
-              await supabaseClient.auth.signOut();
+              await supabase.auth.signOut();
             } catch (err) {
               console.warn('Error cerrando sesión', err);
             }
           }
-          window.location.href = 'login.html';
+          location.href = 'login.html';
         });
       }
 
@@ -90,7 +93,7 @@ function loadHeader() {
         historyLink.addEventListener('click', function(e) {
           // por si acaso se evita recargar misma página
           e.preventDefault();
-          window.location.href = 'historial.html';
+          location.href = 'historial.html';
         });
       }
 

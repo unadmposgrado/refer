@@ -1,26 +1,23 @@
 // Nota: la fecha incluida en el paréntesis se toma del año de la "fecha de consulta" como valor por defecto.
 
-// 🔹 CONFIGURACIÓN SUPABASE - necesario para verificar sesión y cerrar sesión
-const SUPABASE_URL = 'https://oyefwyqevymkcdpsgvkw.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_hUqkZIvfFq-8lfwXEp9N9w_2gDd1ywP';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-// exponer el cliente a otros scripts (header.js lo usa para logout)
-window.supabaseClient = supabaseClient;
+// 🔹 CONFIGURACIÓN SUPABASE - usar cliente centralizado
+import { supabase } from './supabaseClient.js';
+import { initAuthListener } from './auth.js';
 
-async function checkSession() {
-  if (typeof supabaseClient === 'undefined') return;
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) {
-    window.location.href = 'login.html';
-  }
-}
+// ------------------------------------------------------
+// Autenticación: listener centralizado
+// ------------------------------------------------------
 
-// comprobar sesión al cargar la página
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', checkSession);
-} else {
-  checkSession();
-}
+// iniciamos el listener una sola vez para toda la aplicación
+// las redirecciones específicas de cada página se delegan a auth.js
+initAuthListener();
+
+// ------------------------------------------------------
+// Código existente de la aplicación (formulario, catálogo, etc.)
+// ------------------------------------------------------
+// ------------------------------------------------------
+// Código existente de la aplicación (formulario, catálogo, etc.)
+// ------------------------------------------------------
 
 (function(){
   const form = document.getElementById('refForm');

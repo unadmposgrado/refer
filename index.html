@@ -32,9 +32,12 @@
     </div>
   </footer>
 
-  <script src="js/header.js" defer></script>
-  <script src="js/app.js" defer></script>
-  <script src="js/login.js" defer></script>
-  <script src="js/registro.js" defer></script>
+  <script type="module" src="js/header.js"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module">
+    import { requireGuest } from './js/auth.js';
+    // proteger la página pública
+    requireGuest();
+  </script>
 </body>
 </html>

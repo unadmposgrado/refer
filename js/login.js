@@ -2,19 +2,26 @@
 // Maneja inicio de sesión con Supabase
 
 // =============================
-// 🔹 CONFIGURACIÓN SUPABASE
+// 🔹 CONFIGURACIÓN SUPABASE (cliente centralizado)
 // =============================
-const SUPABASE_URL = 'https://oyefwyqevymkcdpsgvkw.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_hUqkZIvfFq-8lfwXEp9N9w_2gDd1ywP';
-
-// Crear cliente
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { supabase } from './supabaseClient.js';
 
 
 // =============================
 // 🔹 INICIALIZACIÓN
 // =============================
-function initLogin() {
+import { requireGuest } from './auth.js';
+
+async function initLogin() {
+  // sólo ejecutamos esta inicialización cuando estamos en la página de login,
+  // de modo que header.js pueda invocarla en cualquier otra página sin
+  // provocar redirecciones inesperadas.
+  const page = location.pathname.split('/').pop();
+  if (page !== 'login.html') return;
+
+  // redirigir si ya hay sesión activa
+  await requireGuest();
+
   // sólo manejamos el envío del formulario; la navegación del botón se hace en header.js
   const form = document.getElementById('loginForm');
   if (form) form.addEventListener('submit', handleLogin);
@@ -30,7 +37,7 @@ async function handleLogin(event) {
   const form = document.getElementById('loginForm');
 
   if (!form) {
-    window.location.href = 'login.html';
+    location.href = 'login.html';
     return;
   }
 
@@ -42,7 +49,7 @@ async function handleLogin(event) {
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
@@ -52,18 +59,17 @@ async function handleLogin(event) {
     return;
   }
 
-  alert('Inicio de sesión exitoso.');
-
-  // Redirigir a página de referencias
-  window.location.href = 'refer.html';
+  // si la respuesta contiene un session, podemos guardar algo o simplemente navegar
+  if (data && data.session) {
+    // sesión iniciada correctamente
+    location.href = 'refer.html';
+  } else {
+    // en algunos casos la sesión se crea después de confirmación por correo
+    alert('Inicio de sesión iniciado. Revisa tu correo si es necesario.');
+    location.href = 'login.html';
+  }
 }
 
 
-// =============================
-// 🔹 DOM READY
-// =============================
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initLogin);
-} else {
-  initLogin();
-}
+// export initialization function for use by header.js or entry scripts
+export { initLogin };

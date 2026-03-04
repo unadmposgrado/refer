@@ -2,13 +2,9 @@
 // Maneja el registro de usuarios con Supabase
 
 // =============================
-// 🔹 CONFIGURACIÓN SUPABASE
+// 🔹 CONFIGURACIÓN SUPABASE (cliente centralizado)
 // =============================
-const SUPABASE_URL = 'https://oyefwyqevymkcdpsgvkw.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_hUqkZIvfFq-8lfwXEp9N9w_2gDd1ywP';
-
-// Crear cliente
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { supabase } from './supabaseClient.js';
 
 
 // =============================
@@ -30,35 +26,40 @@ async function handleRegister(event) {
   const form = document.getElementById('registerForm');
 
   if (!form) {
-    window.location.href = 'registro.html';
+    location.href = 'registro.html';
     return;
   }
 
   const email = form.email.value.trim();
   const password = form.password.value.trim();
+  const confirmPassword = form.confirmPassword.value.trim();
   const fullName = form.fullName.value.trim();
   const program = form.program.value.trim();
   const matricula = form.matricula.value.trim(); // opcional
 
-  if (!email || !password || !fullName || !program) {
+  // validaciones básicas
+  if (!email || !password || !confirmPassword || !fullName || !program) {
     alert('Por favor completa todos los campos obligatorios.');
     return;
   }
 
-  // pasamos los datos extra como user_metadata a Supabase
-  const { data, error } = await supabaseClient.auth.signUp(
-    {
-      email,
-      password
-    },
-    {
+  if (password !== confirmPassword) {
+    alert('Las contraseñas no coinciden.');
+    return;
+  }
+
+  // pasamos los datos extra como user_metadata a Supabase (v2 API requiere "options.data")
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
       data: {
         full_name: fullName,
         program: program,
         matricula: matricula || null
       }
     }
-  );
+  });
 
   if (error) {
     alert('Error: ' + error.message);
@@ -68,15 +69,9 @@ async function handleRegister(event) {
   alert('Registro exitoso. Revisa tu correo si la confirmación está activada.');
   
   // Redirigir a login
-  window.location.href = 'login.html';
+  location.href = 'login.html';
 }
 
 
-// =============================
-// 🔹 DOM READY
-// =============================
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initRegister);
-} else {
-  initRegister();
-}
+// export initialization function for header or entry point
+export { initRegister };
