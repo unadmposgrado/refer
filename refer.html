@@ -42,7 +42,7 @@
       <div class="welcome">
         <img src="img/referenciaPC.png" alt="Generador de referencias IA" class="welcome-img">
         <p class="welcome-text">
-          <strong>Bienvenido/a.</strong><br>
+          <strong>Te damos la bienvenida <span id="welcome-name"></span></strong><br>
           Esta herramienta recupera elementos del estilo APA para generar referencias bibliográficas de contenidos producidos con modelos de lenguaje de inteligencia artificial.
         </p>
       </div>
@@ -92,7 +92,7 @@
 
           <div class="form-row">
             <label for="tema">Tema</label>
-            <input type="text" id="tema" name="tema" placeholder="(opcional)">
+            <input type="text" id="tema" name="tema" placeholder="Ej. física cuántica">
           </div>
           <div class="form-row">
             <label for="prompt">Prompt</label>
@@ -136,8 +136,20 @@
   <script type="module" src="js/header.js"></script>
   <script type="module" src="js/app.js"></script>
   <script type="module">
-    import { requireAuth } from './js/auth.js';
-    requireAuth();
+    import { requireAuth, getUser } from './js/auth.js';
+    
+    // asegurar sesión y mostrar nombre en la bienvenida
+    async function initPage() {
+      const user = await requireAuth();
+      if (user) {
+        const nameEl = document.getElementById('welcome-name');
+        if (nameEl) {
+          const displayName = user.user_metadata?.full_name || user.email || '';
+          nameEl.textContent = displayName;
+        }
+      }
+    }
+    initPage();
   </script>
 </body>
 </html>
