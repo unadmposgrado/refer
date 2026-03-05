@@ -230,10 +230,14 @@ legend{font-weight:600;margin-bottom:.5rem}
 .form-row{display:flex;flex-direction:column;margin-bottom:.75rem}
 label{font-weight:600;margin-bottom:.25rem}
 .required{color:#dc2626;margin-left:.25rem}
-input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="url"]{
-  padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;font-size:1rem
+input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="url"], textarea {
+  padding:.5rem .6rem;
+  border:1px solid var(--border);
+  border-radius:6px;
+  font-size:1rem;
+  width:100%;
 }
-input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
+input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
 .form-actions{display:flex;justify-content:flex-start;margin-top:.5rem}
 .btn-primary, .btn-secondary{padding:.5rem .75rem;border-radius:6px;border:0;cursor:pointer;font-weight:600}
 .btn-primary{background:#29473f;color:var(--accent-contrast)}
@@ -253,6 +257,7 @@ input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--accent)}
   .form-row{flex-direction:row;gap:1rem;align-items:center}
   .form-row label{width:220px;margin-bottom:0}
   .form-row input{flex:1}
+  .form-row textarea{flex:1}
 }
 
 /* componentes nuevos para dashboard y administración */
