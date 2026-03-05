@@ -15,6 +15,14 @@ async function renderHistorial() {
     return; // la redirección ya se hizo
   }
 
+  // mostrar el nombre/email del usuario debajo del título
+  const nameEl = document.getElementById('user-name');
+  if (nameEl && user) {
+    // preferir el nombre completo en metadata si existe
+    const displayName = user.user_metadata?.full_name || user.email || '';
+    nameEl.textContent = displayName;
+  }
+
   const container = document.getElementById('historial-list');
   if (!container) return;
   // asegurarse de que empiece vacío
@@ -75,9 +83,13 @@ async function renderHistorial() {
 
     card.innerHTML = `
       <div class="citation-text">${c.citation_text || ''}</div>
+      <div class="citation-extra">
+        <strong>Tema:</strong> ${c.tema || ''} &nbsp;|&nbsp;
+        <strong>Prompt:</strong> ${c.prompt || ''} &nbsp;|&nbsp;
+        <strong>Respuesta:</strong> ${c.llm_response || ''}
+      </div>
       <div class="citation-meta">
         <span class="meta-item"><strong>Modelo:</strong> ${modelDisplay}</span>
-        <span class="meta-item"><strong>Consulta:</strong> ${formatDate(c.consulta_fecha)}</span>
         <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
       </div>
     `;
