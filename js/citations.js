@@ -15,6 +15,7 @@ export async function saveCitation(data) {
   if (!user) {
     throw new Error('No hay usuario autenticado');
   }
+  console.debug('[citations] guardando cita para user', user.id);
 
   // crear el registro con user_id y los campos proporcionados
   const payload = {
@@ -42,13 +43,16 @@ export async function saveCitation(data) {
  * @returns {Object} Resultado de la consulta ({ data, error }).
  * @throws Error si no hay usuario autenticado.
  */
-export async function getUserCitations() {
-  const user = await getUser();
+export async function getUserCitations(userParam) {
+  let user = userParam;
+  if (!user) {
+    user = await getUser();
+  }
   if (!user) {
     throw new Error('No hay usuario autenticado');
   }
+  console.debug('[citations] user id:', user.id);
 
-  // traer también el nombre del modelo mediante la relación
   const { data, error } = await supabase
     .from('citations')
     .select(`
@@ -58,7 +62,14 @@ export async function getUserCitations() {
         name
       )
     `)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[citations] error obteniendo citas para user', user.id, error);
+  } else {
+    console.debug('[citations] returned', (data || []).length, 'rows');
+  }
 
   return { data, error };
 }

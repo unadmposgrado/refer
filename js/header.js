@@ -7,11 +7,20 @@ import { initLogin } from './login.js';
 import { initRegister } from './registro.js';
 import { getUser } from './auth.js';
 
-function loadHeader() {
-  // decidir qué archivo traer según la página actual
+async function loadHeader() {
+  // elegir qué header cargar basándonos en la sesión de Supabase
+  // esto unifica la lógica para todas las páginas y evita depender
+  // únicamente del nombre del archivo actual.
   let file = 'header.html';
-  if (location.pathname.endsWith('refer.html')) {
-    file = 'header-logged.html';
+  try {
+    const user = await getUser();
+    if (user) {
+      file = 'header-logged.html';
+    }
+  } catch (err) {
+    // si hay algún fallo durante la comprobación de sesión, dejamos
+    // el header público para no bloquear la carga de la página.
+    console.error('Error verificando sesión para header:', err);
   }
 
   fetch(file)

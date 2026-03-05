@@ -6,12 +6,18 @@ import { getUserCitations } from './citations.js';
 import { supabase } from './supabaseClient.js'; // importar sólo para cumplir requisito, no se usa aquí
 
 async function renderUserDashboard() {
-  // proteger la página
-  await requireAuth();
+  // proteger la página y capturar usuario
+  let user;
+  try {
+    user = await requireAuth();
+  } catch (e) {
+    console.debug('[dashboard] requireAuth redirigió', e);
+    return;
+  }
 
   let result;
   try {
-    result = await getUserCitations();
+    result = await getUserCitations(user);
   } catch (err) {
     console.error('Error obteniendo citas para dashboard:', err);
     result = { data: [], error: err };

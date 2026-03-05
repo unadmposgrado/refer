@@ -14,11 +14,21 @@ export async function getSession() {
 }
 
 /**
- * Devuelve el usuario de la sesión actual o null si no existe.
+ * Devuelve el usuario autenticado actual o null si no existe.
+ * Usa directamente la API `supabase.auth.getUser()` que obtiene el usuario
+ * de la sesión ya inicializada en el cliente (más fiable tras recargar).
  */
 export async function getUser() {
-  const session = await getSession();
-  return session?.user || null;
+  const { data } = await supabase.auth.getUser();
+  return data?.user || null;
+}
+
+/**
+ * Alias para `getUser()`. Se mantiene por claridad cuando queremos enfatizar
+ * que necesitamos específicamente el objeto de usuario.
+ */
+export async function getCurrentUser() {
+  return getUser();
 }
 
 /**
@@ -57,18 +67,22 @@ export async function getUserRole() {
  * Redirige a la página pública si no hay sesión.
  */
 export async function requireAuth() {
-  const session = await getSession();
-  if (!session) {
+  // devuelve el usuario para que el llamador pueda reutilizarlo
+  const user = await getUser();
+  if (!user) {
+    // redirige y lanza para evitar continuar con lógica subsiguiente
     location.href = 'index.html';
+    throw new Error('Sin sesión activa');
   }
+  return user;
 }
 
 /**
  * Redirige al panel si ya existe una sesión.
  */
 export async function requireGuest() {
-  const session = await getSession();
-  if (session) {
+  const user = await getUser();
+  if (user) {
     location.href = 'refer.html';
   }
 }
@@ -78,8 +92,8 @@ export async function requireGuest() {
  * Si no hay sesión va a la página pública, si el rol no es "admin" va a refer.html.
  */
 export async function requireAdmin() {
-  const session = await getSession();
-  if (!session) {
+  const user = await getUser();
+  if (!user) {
     location.href = 'index.html';
     return;
   }

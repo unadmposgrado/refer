@@ -5,15 +5,24 @@ import { requireAuth } from './auth.js';
 import { getUserCitations } from './citations.js';
 
 async function renderHistorial() {
-  // proteger la página
-  await requireAuth();
+  // proteger la página y obtener el usuario en el proceso
+  let user;
+  try {
+    user = await requireAuth();
+    console.debug('[historial] usuario actual:', user && user.id);
+  } catch (e) {
+    console.debug('[historial] requireAuth redirigió o falló', e);
+    return; // la redirección ya se hizo
+  }
 
   const container = document.getElementById('historial-list');
   if (!container) return;
+  // asegurarse de que empiece vacío
+  container.innerHTML = '';
 
   let result;
   try {
-    result = await getUserCitations();
+    result = await getUserCitations(user);
   } catch (err) {
     console.error('Error obteniendo citas:', err);
     container.textContent = 'No se pudieron cargar las citas.';
@@ -27,8 +36,10 @@ async function renderHistorial() {
     return;
   }
 
+  console.debug('[historial] citas obtenidas:', data && data.length);
+
   if (!data || data.length === 0) {
-    container.textContent = 'No tienes citas guardadas todavía.';
+    container.textContent = 'Aún no tienes referencias guardadas.';
     return;
   }
 
