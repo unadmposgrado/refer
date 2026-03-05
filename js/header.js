@@ -5,15 +5,16 @@
 import { supabase } from './supabaseClient.js';
 import { initLogin } from './login.js';
 import { initRegister } from './registro.js';
-import { getUser } from './auth.js';
+import { getUser, getUserRole } from './auth.js';
 
 async function loadHeader() {
   // elegir qué header cargar basándonos en la sesión de Supabase
   // esto unifica la lógica para todas las páginas y evita depender
   // únicamente del nombre del archivo actual.
   let file = 'header.html';
+  let user = null;
   try {
-    const user = await getUser();
+    user = await getUser();
     if (user) {
       file = 'header-logged.html';
     }
@@ -54,36 +55,58 @@ async function loadHeader() {
         });
       }
 
-      // perfil / menú desplegable (sólo en header-logged.html)
-      const profileBtn = document.getElementById('profileBtn');
-      const dropdown = document.getElementById('profileDropdown');
-      if (profileBtn && dropdown) {
-        profileBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const expanded = profileBtn.getAttribute('aria-expanded') === 'true';
-          profileBtn.setAttribute('aria-expanded', String(!expanded));
-          dropdown.classList.toggle('visible');
+      // navegación entre secciones y páginas para usuario autenticado
+      const navRefer = document.getElementById('navRefer');
+      if (navRefer) {
+        navRefer.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (!location.pathname.endsWith('refer.html')) {
+            location.href = 'refer.html';
+          }
         });
-        // cerrar al hacer clic fuera
-        document.addEventListener('click', function() {
-          dropdown.classList.remove('visible');
-          profileBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      const navHistorial = document.getElementById('navHistorial');
+      if (navHistorial) {
+        navHistorial.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (location.pathname.endsWith('historial.html')) {
+            if (typeof window.showHistorial === 'function') {
+              window.showHistorial();
+            }
+          } else {
+            location.href = 'historial.html#historial';
+          }
+        });
+      }
+
+      const navMetrics = document.getElementById('navMetrics');
+      if (navMetrics) {
+        // estará oculto por defecto en el HTML; desbloqueamos solo si el rol es admin
+        navMetrics.hidden = true;
+        getUserRole().then(role => {
+          if (role === 'admin') {
+            navMetrics.hidden = false;
+          }
+        }).catch(err => {
+          console.warn('No se pudo obtener rol para métricas', err);
         });
 
-        // intentar cargar foto de perfil desde Supabase si hay sesión
-        async function tryLoadAvatar(){
-          const user = await getUser().catch(()=>null);
-          if (user && user.user_metadata && user.user_metadata.avatar_url) {
-            const imgEl = document.querySelector('.profile-img');
-            if (imgEl) imgEl.src = user.user_metadata.avatar_url;
+        navMetrics.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (location.pathname.endsWith('historial.html')) {
+            if (typeof window.showMetrics === 'function') {
+              window.showMetrics();
+            }
+          } else {
+            location.href = 'historial.html#metrics';
           }
-        }
-        // esperamos a que otros scripts (app.js) inicialicen el cliente
-        setTimeout(tryLoadAvatar, 0);
+        });
       }
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', async function(e) {
+
+      const logoutLink = document.getElementById('logoutLink');
+      if (logoutLink) {
+        logoutLink.addEventListener('click', async function(e) {
           e.preventDefault();
           if (typeof supabase !== 'undefined') {
             try {
@@ -93,16 +116,6 @@ async function loadHeader() {
             }
           }
           location.href = 'login.html';
-        });
-      }
-
-      // redirección al historial
-      const historyLink = document.getElementById('historyLink');
-      if (historyLink) {
-        historyLink.addEventListener('click', function(e) {
-          // por si acaso se evita recargar misma página
-          e.preventDefault();
-          location.href = 'historial.html';
         });
       }
 

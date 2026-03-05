@@ -59,6 +59,24 @@ body{
   color:var(--accent-contrast);
 }
 
+/* navegación principal cuando el usuario está logueado */
+.header-nav {
+  margin-left:auto;
+  display:flex;
+  gap:1rem;
+}
+.header-nav a {
+  color: var(--header-menu-color);
+  text-decoration: none;
+  padding: .5rem .75rem;
+  border-radius:6px;
+  font-weight:600;
+}
+.header-nav a:hover {
+  background: var(--header-menu-hover-bg);
+  color: var(--header-menu-color);
+}
+
 /* perfil redondo y menú desplegable */
 .profile-menu{
   position:relative;

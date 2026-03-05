@@ -10,13 +10,19 @@
 <body>
   <div id="siteHeader"></div>
 
-  <main class="container" id="main">
-    <h2>Mi historial</h2>
-    <p id="user-name" class="user-name"></p>
-    <p>Estas son tus referencias anteriores:</p>
-    <!-- dashboard metrics para el usuario -->
-    <div id="user-dashboard"></div>
-    <div id="historial-list"></div>
+  <main id="dashboard" class="container">
+    <section id="historial-section">
+      <h2>Mi historial</h2>
+      <p id="user-name" class="user-name"></p>
+      <p>Estas son tus referencias anteriores:</p>
+      <!-- dashboard métricas para el usuario -->
+      <div id="user-dashboard"></div>
+      <div id="historial-list"></div>
+    </section>
+
+    <section id="metrics-section" hidden>
+      <!-- contenido de métricas se inyecta desde js/metrics.js -->
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -29,5 +35,6 @@
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/dashboard.js"></script>
   <script type="module" src="js/historial.js"></script>
+  <script type="module" src="js/metrics.js"></script>
 </body>
 </html>

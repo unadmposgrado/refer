@@ -98,11 +98,5 @@ async function renderHistorial() {
   });
 }
 
-// ejecutar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderHistorial);
-} else {
-  renderHistorial();
-}
-
+// el render se controla desde dashboard.js para poder refrescarlo al cambiar de pestaña
 export { renderHistorial };

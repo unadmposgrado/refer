@@ -1,9 +1,51 @@
 // dashboard.js
 // Panel de usuario con métricas en historial.html
 
-import { requireAuth, getUser } from './auth.js';
+import { requireAuth, getUserRole } from './auth.js';
 import { getUserCitations } from './citations.js';
 import { supabase } from './supabaseClient.js'; // importar sólo para cumplir requisito, no se usa aquí
+import { renderHistorial } from './historial.js';
+import { renderMetrics } from './metrics.js';
+
+// Show / hide factories ---------------------------------------------------
+function showSection(sectionId) {
+  document.querySelectorAll('#dashboard section').forEach(sec => {
+    sec.hidden = true;
+  });
+  const target = document.getElementById(sectionId);
+  if (target) target.hidden = false;
+}
+
+async function showHistorial() {
+  showSection('historial-section');
+  // refrescar contenido cuando se vuelve a la pestaña
+  await renderHistorial();
+  // actualizar hash para reflectar estado
+  if (location.hash !== '#historial') {
+    history.replaceState(null, '', 'historial.html#historial');
+  }
+}
+
+async function showMetrics() {
+  // no exponemos métricas si no es administrador
+  try {
+    await requireAuth();
+    const role = await getUserRole();
+    if (role !== 'admin') {
+      // si alguien intenta acceder sin permiso, mostramos historial en su lugar
+      showHistorial();
+      return;
+    }
+  } catch (e) {
+    return; // redirección ya ejecutada
+  }
+
+  showSection('metrics-section');
+  renderMetrics();
+  if (location.hash !== '#metrics') {
+    history.replaceState(null, '', 'historial.html#metrics');
+  }
+}
 
 async function renderUserDashboard() {
   // proteger la página y capturar usuario
@@ -82,10 +124,30 @@ async function renderUserDashboard() {
   `;
 }
 
+// En la carga inicial, eligimos qué sección mostrar según hash
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderUserDashboard);
+  document.addEventListener('DOMContentLoaded', () => {
+    const h = location.hash;
+    if (h === '#metrics') {
+      showMetrics();
+    } else {
+      showHistorial();
+    }
+    renderUserDashboard();
+  });
 } else {
+  const h = location.hash;
+  if (h === '#metrics') {
+    showMetrics();
+  } else {
+    showHistorial();
+  }
   renderUserDashboard();
 }
 
-export { renderUserDashboard };
+// también añadimos a `window` para que los scripts que no importan el módulo puedan invocarlos
+window.showSection = showSection;
+window.showHistorial = showHistorial;
+window.showMetrics = showMetrics;
+
+export { renderUserDashboard, showSection, showHistorial, showMetrics };
