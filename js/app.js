@@ -5,6 +5,11 @@ import { supabase } from './supabaseClient.js';
 import { initAuthListener } from './auth.js';
 import { saveCitation } from './citations.js';
 
+// cache local para evitar múltiples consultas a la misma fila y para
+// facilitar la traducción nombre→id que usa el autocompletado por URL
+const modelCache = {}; // { [id]: {name, organization, url} }
+
+
 // ------------------------------------------------------
 // Autenticación: listener centralizado
 // ------------------------------------------------------
@@ -31,7 +36,8 @@ export async function loadModels(){
   try{
     const { data, error } = await supabase
       .from('models')
-      .select('id, name')
+      // obtenemos también organización y url para rellenado automático
+      .select('id, name, organization_responsible, model_url')
       .order('name');
 
     if(error){
@@ -49,6 +55,13 @@ export async function loadModels(){
     select.appendChild(placeholder);
 
     data.forEach(model => {
+      // guardar en caché para otras partes del script
+      modelCache[model.id] = {
+        name: model.name,
+        organization: model.organization_responsible || '',
+        url: model.model_url || ''
+      };
+
       const opt = document.createElement('option');
       opt.value = model.id;
       opt.textContent = model.name;
@@ -136,10 +149,21 @@ document.addEventListener('DOMContentLoaded', loadModels);
 
   // Gestionar cambios en la selección del modelo
   if(modelSelect){
-    modelSelect.addEventListener('change', function(){
+    /*
+      Cuando el usuario elige un modelo del <select> principal los datos
+      de `organization_responsible` y `model_url` se obtienen directamente
+      desde la tabla `models` de Supabase. Se conservan los casos de
+      placeholder y "otro" como estaban antes. Se añaden logs para
+      depuración y se transforman valores vacíos a cadenas vacías que más
+      tarde se convierten a `null` en saveCitation().
+    */
+    modelSelect.addEventListener('change', async function(){
       const v = this.value;
+      console.debug('Cambio de modelo seleccionado:', v);
+
       if(!v){
         // placeholder seleccionado
+        console.debug('Placeholder seleccionado, limpiando campos.');
         if(modelOtherRow) modelOtherRow.style.display = 'none';
         if(modelNameCustom) { modelNameCustom.setAttribute('aria-hidden','true'); modelNameCustom.required = false; modelNameCustom.value = ''; }
         organizationInput.value = '';
@@ -149,6 +173,7 @@ document.addEventListener('DOMContentLoaded', loadModels);
       }
 
       if(v === 'otro'){
+        console.debug('"Otro modelo" seleccionado, habilitando ingreso manual.');
         // Mostrar fila para escribir otro modelo (se oculta/monitored como bloque para mantener orden)
         if(modelOtherRow) modelOtherRow.style.display = '';
         if(modelNameCustom){ modelNameCustom.removeAttribute('aria-hidden'); modelNameCustom.required = true; modelNameCustom.value = ''; modelNameCustom.focus(); }
@@ -160,19 +185,53 @@ document.addEventListener('DOMContentLoaded', loadModels);
         return;
       }
 
-      // Modelo del catálogo seleccionado: autocompletar organización y URL
+      // Modelo válido seleccionado; ocultar el campo "otro" y normalizar el select
       if(modelOtherRow) modelOtherRow.style.display = 'none';
       if(modelNameCustom){ modelNameCustom.setAttribute('aria-hidden','true'); modelNameCustom.required = false; }
       this.removeAttribute('aria-disabled');
 
-      const entry = catalogoModelosIA[v];
-      if(entry){
-        organizationInput.value = entry.organizacion || '';
-        platformUrlInput.value = entry.url || '';
-      }else{
-        organizationInput.value = '';
-        platformUrlInput.value = '';
+      // Intentar primero aprovechar cualquier información previamente cargada
+      // en la caché (populateModelSelect / loadModels guarda organisation/url).
+      let org = '';
+      let url = '';
+      if(modelCache[v]){
+        org = modelCache[v].organization || '';
+        url = modelCache[v].url || '';
       }
+      // si no tenemos nada útil, hacemos una consulta puntual a Supabase
+      if(!org && !url){
+        try{
+          const { data: modelData, error } = await supabase
+            .from('models')
+            .select('organization_responsible, model_url')
+            .eq('id', v)
+            .single();
+          if(error){
+            console.error('Error al consultar modelo en Supabase:', error);
+          }
+          if(modelData){
+            org = modelData.organization_responsible || '';
+            url = modelData.model_url || '';
+            // almacenar en caché para el futuro
+            modelCache[v] = modelCache[v] || {};
+            modelCache[v].organization = org;
+            modelCache[v].url = url;
+          }
+        }catch(err){
+          console.error('Excepción al obtener detalles del modelo:', err);
+        }
+      }
+
+      // Si por alguna razón no obtuvimos datos, usar catálogo local como respaldo
+      if((!org && !url) && catalogoModelosIA[v]){
+        const entry = catalogoModelosIA[v];
+        org = entry.organizacion || '';
+        url = entry.url || '';
+      }
+
+      organizationInput.value = org;
+      platformUrlInput.value = url;
+      console.debug('Valores rellenados -> organización:', org, 'url:', url);
     });
   }
 
@@ -223,12 +282,12 @@ document.addEventListener('DOMContentLoaded', loadModels);
         const organization = entry.organizacion;
         const officialUrl = entry.url;
 
-        // Buscar el modelo en el select para activarlo
+        // Buscar el modelo en el select para activarlo (convertir nombre → id usando caché)
         if(modelSelect){
-          const foundOption = Array.from(modelSelect.options).find(opt => opt.value === modelName);
-          if(foundOption){
+          const idMatch = Object.keys(modelCache).find(id => modelCache[id].name === modelName);
+          if(idMatch){
             // Seleccionar el modelo en el select (esto también dispara el change listener)
-            modelSelect.value = modelName;
+            modelSelect.value = idMatch;
             modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
           }else{
             // El modelo no está en el select, activar "Otro modelo"
@@ -353,7 +412,12 @@ document.addEventListener('DOMContentLoaded', loadModels);
         return;
       }
     }else{
-      finalModelName = selValue ? selValue.trim() : '';
+      // cuando la lista viene de Supabase, el valor es el id; buscar nombre en caché
+      if(selValue && modelCache[selValue]){
+        finalModelName = modelCache[selValue].name || '';
+      } else {
+        finalModelName = selValue ? selValue.trim() : '';
+      }
     }
 
     // Validación extra: si no hay model_id válido, debe haber nombre y organización personalizados
