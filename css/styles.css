@@ -77,6 +77,79 @@ body{
   color: var(--header-menu-color);
 }
 
+/* nueva estructura de header para responsive */
+.app-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* asegurar que tanto enlaces como botones del header compartan estilo */
+.header-nav button,
+.header-nav a {
+  /* texto blanco para destacar sobre el fondo oscuro del header */
+  color: #ffffff;
+  background: none;
+  border: none;
+  padding: .5rem .75rem;
+  border-radius:6px;
+  font-weight:600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.header-nav button:hover,
+.header-nav a:hover {
+  background: var(--header-menu-hover-bg);
+  /* al hacer hover invertimos el color para mantener contraste legible */
+  color: var(--header-menu-color);
+}
+
+/* hamburguesa */
+.hamburger {
+  display: none;
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-contrast);
+}
+
+@media (max-width: 768px) {
+  .header-nav {
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    background: #29473f; /* mantengo fondo oscuro para no romper tema */
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    flex-direction: column;
+    padding: 10px;
+    display: none;
+    z-index: 1001;
+  }
+
+  /* contraste en el menú desplegable móvil */
+  .header-nav button,
+  .header-nav a {
+    color: #ffffff;
+  }
+
+  .header-nav.active {
+    display: flex;
+  }
+
+  .hamburger {
+    display: block;
+  }
+}
+
 /* perfil redondo y menú desplegable */
 .profile-menu{
   position:relative;

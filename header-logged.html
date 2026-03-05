@@ -1,16 +1,24 @@
-<header class="site-header">
+<header class="site-header app-header">
   <div class="container">
-    <a href="refer.html" class="header-logo">
-      <img src="img/Banner SSA.png" alt="Banner SSA" class="header-banner">
-    </a>
-    <p class="lead">Generador de referencias de LLM</p>
+    <div class="header-left">
+      <a href="refer.html" class="header-logo">
+        <img src="img/Banner SSA.png" alt="Banner SSA" class="header-banner">
+      </a>
+      <p class="lead app-title">Generador de referencias de LLM</p>
+    </div>
+
     <!-- navegación de usuario autenticado -->
-    <nav id="userNav" class="header-nav">
-      <a href="refer.html" id="navRefer">Referencias</a>
-      <a href="#" id="navHistorial">Historial</a>
-      <!-- el enlace métrica empieza oculto y se habilita si el rol es admin -->
-      <a href="#" id="navMetrics" hidden>Métricas</a>
-      <a href="#" id="logoutLink">Cerrar sesión</a>
+    <nav id="headerNav" class="header-nav">
+      <button id="navRefer">Referencias</button>
+      <button id="navHistorial">Historial</button>
+      <!-- el botón métricas se muestra sólo para administradores -->
+      <button id="navMetrics" hidden>Métricas</button>
+      <button id="logoutLink">Cerrar sesión</button>
     </nav>
+
+    <!-- botón hamburguesa móvil -->
+    <button class="hamburger" id="hamburgerBtn" aria-label="Mostrar menú">
+      ☰
+    </button>
   </div>
 </header>

@@ -6,6 +6,7 @@ import { supabase } from './supabaseClient.js';
 import { initLogin } from './login.js';
 import { initRegister } from './registro.js';
 import { getUser, getUserRole } from './auth.js';
+import { initHamburgerMenu } from './ui-menu.js';
 
 async function loadHeader() {
   // elegir qué header cargar basándonos en la sesión de Supabase
@@ -122,6 +123,9 @@ async function loadHeader() {
       // después de insertar, inicializa los scripts de página si existen
       if (typeof initLogin === 'function') initLogin();
       if (typeof initRegister === 'function') initRegister();
+
+      // activar comportamiento del menú hamburguesa (si está presente)
+      if (typeof initHamburgerMenu === 'function') initHamburgerMenu();
     })
     .catch(function(err) {
       console.error('Error cargando header:', err);
