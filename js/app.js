@@ -14,6 +14,61 @@ import { saveCitation } from './citations.js';
 initAuthListener();
 
 // ------------------------------------------------------
+// Carga dinámicamente la lista de modelos desde Supabase
+// ------------------------------------------------------
+
+/**
+ * Obtiene los modelos registrados en la tabla `models` de Supabase,
+ * ordenados por nombre, y rellena el <select> correspondiente.
+ * Cualquier opción existente se elimina antes de añadir las nuevas.
+ *
+ * NOTA: no se deben hardcodear UUIDs ni modificar el esquema.
+ */
+export async function loadModels(){
+  const select = document.getElementById('model-select');
+  if(!select) return;
+
+  try{
+    const { data, error } = await supabase
+      .from('models')
+      .select('id, name')
+      .order('name');
+
+    if(error){
+      console.error('Error cargando modelos:', error);
+      return;
+    }
+
+    // eliminar todas las opciones previas
+    select.innerHTML = '';
+
+    // opción de marcador de posición inicial
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '-- Selecciona un modelo --';
+    select.appendChild(placeholder);
+
+    data.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = model.name;
+      select.appendChild(opt);
+    });
+
+    // mantener la opción "Otro modelo" para permitir entrada manual
+    const otro = document.createElement('option');
+    otro.value = 'otro';
+    otro.textContent = 'Otro modelo';
+    select.appendChild(otro);
+  }catch(err){
+    console.error('Excepción al cargar modelos:', err);
+  }
+}
+
+// Ejecutar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', loadModels);
+
+// ------------------------------------------------------
 // Código existente de la aplicación (formulario, catálogo, etc.)
 // ------------------------------------------------------
 // ------------------------------------------------------
@@ -22,6 +77,7 @@ initAuthListener();
 
 (function(){
   const form = document.getElementById('refForm');
+  const formError = document.getElementById('formError');
   const referenceEl = document.getElementById('reference');
   const copyBtn = document.getElementById('copyBtn');
 
@@ -56,11 +112,11 @@ initAuthListener();
   };
 
   // Elementos del DOM para interacción con el catálogo
-  const modelSelect = document.getElementById('modelSelect');
-  const modelOther = document.getElementById('modelOther');
+  const modelSelect = document.getElementById('model-select');
+  const modelNameCustom = document.getElementById('model-name-custom');
   // Fila que contiene el label + input para "Otro modelo" — se muestra/oculta completa para mantener orden visual
-  const modelOtherRow = document.getElementById('modelOtherRow');
-  const organizationInput = document.getElementById('organization');
+  const modelOtherRow = document.getElementById('model-other-row');
+  const organizationInput = document.getElementById('organization-custom');
   const platformUrlInput = document.getElementById('platformUrl');
 
   // Poblar el <select> con las entradas del catálogo (orden en el objeto)
@@ -85,7 +141,7 @@ initAuthListener();
       if(!v){
         // placeholder seleccionado
         if(modelOtherRow) modelOtherRow.style.display = 'none';
-        if(modelOther) { modelOther.setAttribute('aria-hidden','true'); modelOther.required = false; modelOther.value = ''; }
+        if(modelNameCustom) { modelNameCustom.setAttribute('aria-hidden','true'); modelNameCustom.required = false; modelNameCustom.value = ''; }
         organizationInput.value = '';
         platformUrlInput.value = '';
         this.removeAttribute('aria-disabled');
@@ -95,7 +151,7 @@ initAuthListener();
       if(v === 'otro'){
         // Mostrar fila para escribir otro modelo (se oculta/monitored como bloque para mantener orden)
         if(modelOtherRow) modelOtherRow.style.display = '';
-        if(modelOther){ modelOther.removeAttribute('aria-hidden'); modelOther.required = true; modelOther.value = ''; modelOther.focus(); }
+        if(modelNameCustom){ modelNameCustom.removeAttribute('aria-hidden'); modelNameCustom.required = true; modelNameCustom.value = ''; modelNameCustom.focus(); }
         // Limpiar organización y URL para que el usuario pueda escribirlas
         organizationInput.value = '';
         platformUrlInput.value = '';
@@ -106,7 +162,7 @@ initAuthListener();
 
       // Modelo del catálogo seleccionado: autocompletar organización y URL
       if(modelOtherRow) modelOtherRow.style.display = 'none';
-      if(modelOther){ modelOther.setAttribute('aria-hidden','true'); modelOther.required = false; }
+      if(modelNameCustom){ modelNameCustom.setAttribute('aria-hidden','true'); modelNameCustom.required = false; }
       this.removeAttribute('aria-disabled');
 
       const entry = catalogoModelosIA[v];
@@ -121,12 +177,19 @@ initAuthListener();
   }
 
   // Mantener sincronía si el usuario escribe manualmente en "Otro modelo"
-  if(modelOther){
-    modelOther.addEventListener('input', function(){
-      // No forzar ninguna copia en inputs ocultos: el valor final se calculará al enviar.
-      // Solo limpiar posibles mensajes de error mientras escribe.
+  if(modelNameCustom){
+    modelNameCustom.addEventListener('input', function(){
       if(this.value && this.value.trim().length) this.setCustomValidity('');
+      if(formError) formError.textContent = '';
     });
+  }
+
+  // limpiar mensaje de error cuando el usuario corrige datos de modelo/organización
+  if(modelSelect){
+    modelSelect.addEventListener('change', ()=>{ if(formError) formError.textContent = ''; });
+  }
+  if(organizationInput){
+    organizationInput.addEventListener('input', ()=>{ if(formError) formError.textContent = ''; });
   }
 
   // Función auxiliar para extraer dominio de una URL
@@ -171,8 +234,8 @@ initAuthListener();
             // El modelo no está en el select, activar "Otro modelo"
             modelSelect.value = 'otro';
             modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            if(modelOther){
-              modelOther.value = modelName;
+            if(modelNameCustom){
+              modelNameCustom.value = modelName;
             }
           }
         }
@@ -186,7 +249,7 @@ initAuthListener();
         // Autocompletar fecha de consulta con la fecha actual
         const today = new Date();
         const isoDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-        const accessDateInput = document.getElementById('accessDate');
+        const accessDateInput = document.getElementById('consulta-fecha');
         if(accessDateInput && !accessDateInput.value){
           accessDateInput.value = isoDate;
         }
@@ -203,7 +266,7 @@ initAuthListener();
         // Autocompletar fecha de consulta con la fecha actual
         const today = new Date();
         const isoDate = today.toISOString().split('T')[0];
-        const accessDateInput = document.getElementById('accessDate');
+        const accessDateInput = document.getElementById('consulta-fecha');
         if(accessDateInput && !accessDateInput.value){
           accessDateInput.value = isoDate;
         }
@@ -266,7 +329,10 @@ initAuthListener();
 
   form.addEventListener('submit', function(evt){
     evt.preventDefault();
-    // Dejar que HTML nativo valide los campos
+    // limpiar mensajes previos
+    if(formError) formError.textContent = '';
+
+    // Dejar que HTML nativo valide los campos básicos
     if(!form.checkValidity()){
       form.reportValidity();
       return;
@@ -278,12 +344,11 @@ initAuthListener();
     let finalModelName = '';
     const selValue = modelSelect ? modelSelect.value : '';
     if(selValue === 'otro'){
-      finalModelName = (modelOther ? modelOther.value : '').trim();
+      finalModelName = (modelNameCustom ? modelNameCustom.value : '').trim();
       if(!finalModelName){
-        // Forzar validación nativa mostrando un mensaje sobre el campo visible
-        if(modelOther){
-          modelOther.setCustomValidity('Por favor ingrese el nombre del modelo.');
-          modelOther.reportValidity();
+        if(modelNameCustom){
+          modelNameCustom.setCustomValidity('Por favor ingrese el nombre del modelo.');
+          modelNameCustom.reportValidity();
         }
         return;
       }
@@ -291,12 +356,25 @@ initAuthListener();
       finalModelName = selValue ? selValue.trim() : '';
     }
 
+    // Validación extra: si no hay model_id válido, debe haber nombre y organización personalizados
+    const orgVal = organizationInput ? organizationInput.value.trim() : '';
+    if((!selValue || selValue === '') || selValue === 'otro'){
+      // Aquí estamos en el caso de no seleccionar modelo oficial o usar "otro"
+      if(!finalModelName || !orgVal){
+        if(formError) formError.textContent = 'Debe proporcionar un modelo (o datos personalizados: nombre y organización).';
+        return;
+      }
+    }
+
     const values = {
-      organization: (data.get('organization') || '').trim(),
+      organization: (data.get('organization-custom') || '').trim(),
       modelName: finalModelName,
-      modelVersion: (data.get('modelVersion') || '').trim(),
-      accessDate: data.get('accessDate') || '',
-      platformUrl: (data.get('platformUrl') || '').trim()
+      modelVersion: (data.get('model-version') || '').trim(),
+      accessDate: data.get('consulta-fecha') || '',
+      platformUrl: (data.get('platformUrl') || '').trim(),
+      tema: (data.get('tema') || '').trim(),
+      prompt: (data.get('prompt') || '').trim(),
+      llm_response: (data.get('llm-response') || '').trim()
     };
 
     const apa = buildAPA(values);
@@ -324,11 +402,11 @@ initAuthListener();
         model_id,
         model_name_custom,
         organization_custom,
-        version: values.modelVersion,
-        consulta_fecha: values.accessDate,
-        tema: null,
-        prompt: null,
-        llm_response: null,
+        version: values.modelVersion || null,
+        consulta_fecha: values.accessDate || null,
+        tema: values.tema || null,
+        prompt: values.prompt || null,
+        llm_response: values.llm_response || null,
         citation_text: apa
       };
 
@@ -336,6 +414,13 @@ initAuthListener();
         const { error } = await saveCitation(citationData);
         if (error) {
           console.error('Error guardando cita:', error);
+        } else {
+          // guardado exitoso: limpiar campos opcionales manteniendo modelo
+          if(document.getElementById('model-version')) document.getElementById('model-version').value = '';
+          if(document.getElementById('tema')) document.getElementById('tema').value = '';
+          if(document.getElementById('prompt')) document.getElementById('prompt').value = '';
+          if(document.getElementById('llm-response')) document.getElementById('llm-response').value = '';
+          // no tocamos consulta-fecha ni selección de modelo
         }
       } catch (err) {
         console.error('Error inesperado guardando cita:', err);

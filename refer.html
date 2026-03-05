@@ -61,37 +61,50 @@
           </div>
 
           <div class="form-row">
-            <label for="modelSelect">Nombre del modelo <span class="required">*</span></label>
+            <label for="model-select">Nombre del modelo <span class="required">*</span></label>
             <div class="input-group">
-              <select id="modelSelect" name="modelSelect" required aria-describedby="modelHelp">
+              <select id="model-select" name="model-select" required aria-describedby="modelHelp">
                 <option value="">-- Selecciona un modelo --</option>
                 
               </select>
             </div>
           </div>
 
-          <div class="form-row" id="modelOtherRow" style="display:none;">
-            <label for="modelOther">Nombre del modelo (otro) <span class="required">*</span></label>
-            <input type="text" id="modelOther" name="modelOther" placeholder="Escribe el nombre del modelo" aria-hidden="true">
+          <div class="form-row" id="model-other-row" style="display:none;">
+            <label for="model-name-custom">Nombre del modelo (otro) <span class="required">*</span></label>
+            <input type="text" id="model-name-custom" name="model-name-custom" placeholder="Escribe el nombre del modelo" aria-hidden="true">
           </div>
 
           <div class="form-row">
-            <label for="organization">Organización responsable <span class="required">*</span></label>
-            <input type="text" id="organization" name="organization" required placeholder="Ej. OpenAI">
+            <label for="organization-custom">Organización responsable <span class="required">*</span></label>
+            <input type="text" id="organization-custom" name="organization-custom" required placeholder="Ej. OpenAI">
           </div>
 
           <div class="form-row">
-            <label for="modelVersion">Versión del modelo</label>
-            <input type="text" id="modelVersion" name="modelVersion" placeholder="Ej. 4.1 (opcional)">
+            <label for="model-version">Versión del modelo</label>
+            <input type="text" id="model-version" name="model-version" placeholder="Ej. 4.1 (opcional)">
           </div>
 
           <div class="form-row">
-            <label for="accessDate">Fecha de consulta <span class="required">*</span></label>
-            <input type="date" id="accessDate" name="accessDate" required>
+            <label for="consulta-fecha">Fecha de consulta <span class="required">*</span></label>
+            <input type="date" id="consulta-fecha" name="consulta-fecha" required>
           </div>
 
+          <div class="form-row">
+            <label for="tema">Tema</label>
+            <input type="text" id="tema" name="tema" placeholder="(opcional)">
+          </div>
+          <div class="form-row">
+            <label for="prompt">Prompt</label>
+            <textarea id="prompt" name="prompt" rows="3" placeholder="(opcional)"></textarea>
+          </div>
+          <div class="form-row">
+            <label for="llm-response">Respuesta del LLM</label>
+            <textarea id="llm-response" name="llm-response" rows="3" placeholder="(opcional)"></textarea>
+          </div>
         </fieldset>
 
+        <div id="formError" class="form-error" aria-live="polite" style="color:var(--error);margin-bottom:1rem;"></div>
         <div class="form-actions">
           <button type="submit" class="btn-primary">Generar referencia</button>
         </div>
