@@ -384,6 +384,21 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   cursor: pointer;
 }
 
+/* estilo de módulos administrativos (contener cada sección) */
+.admin-module {
+  background: #ffffff;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.admin-module-header {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
 /* espacio antes del módulo de historial global */
 #global-history-module {
   margin-top: 2rem;
