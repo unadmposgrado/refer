@@ -94,6 +94,12 @@ document.addEventListener('DOMContentLoaded', loadModels);
   const referenceEl = document.getElementById('reference');
   const copyBtn = document.getElementById('copyBtn');
 
+  // si la página no tiene formulario de citas (por ejemplo index.html), abandonamos
+  if (!form) {
+    // nada que hacer aquí, el resto del script solo se utiliza en refer.html
+    return;
+  }
+
     // Catálogo de modelos de lenguaje IA
   
   const catalogoModelosIA = {
@@ -166,8 +172,8 @@ document.addEventListener('DOMContentLoaded', loadModels);
         console.debug('Placeholder seleccionado, limpiando campos.');
         if(modelOtherRow) modelOtherRow.style.display = 'none';
         if(modelNameCustom) { modelNameCustom.setAttribute('aria-hidden','true'); modelNameCustom.required = false; modelNameCustom.value = ''; }
-        organizationInput.value = '';
-        platformUrlInput.value = '';
+        if (organizationInput) organizationInput.value = '';
+        if (platformUrlInput) platformUrlInput.value = '';
         this.removeAttribute('aria-disabled');
         return;
       }
@@ -178,8 +184,8 @@ document.addEventListener('DOMContentLoaded', loadModels);
         if(modelOtherRow) modelOtherRow.style.display = '';
         if(modelNameCustom){ modelNameCustom.removeAttribute('aria-hidden'); modelNameCustom.required = true; modelNameCustom.value = ''; modelNameCustom.focus(); }
         // Limpiar organización y URL para que el usuario pueda escribirlas
-        organizationInput.value = '';
-        platformUrlInput.value = '';
+        if (organizationInput) organizationInput.value = '';
+        if (platformUrlInput) platformUrlInput.value = '';
         // Indicar visualmente que el select está en modo "otro"
         this.setAttribute('aria-disabled','true');
         return;
@@ -229,8 +235,8 @@ document.addEventListener('DOMContentLoaded', loadModels);
         url = entry.url || '';
       }
 
-      organizationInput.value = org;
-      platformUrlInput.value = url;
+      if (organizationInput) organizationInput.value = org;
+      if (platformUrlInput) platformUrlInput.value = url;
       console.debug('Valores rellenados -> organización:', org, 'url:', url);
     });
   }
@@ -300,10 +306,10 @@ document.addEventListener('DOMContentLoaded', loadModels);
         }
 
         // Autocompletar organización
-        organizationInput.value = organization;
+        if (organizationInput) organizationInput.value = organization;
 
         // Reemplazar la URL por la oficial del catálogo
-        this.value = officialUrl;
+        if (this) this.value = officialUrl;
 
         // Autocompletar fecha de consulta con la fecha actual
         const today = new Date();
@@ -320,7 +326,7 @@ document.addEventListener('DOMContentLoaded', loadModels);
           modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
         }
         // Limpiar organización (el usuario debe llenarla manualmente)
-        organizationInput.value = '';
+        if (organizationInput) organizationInput.value = '';
         // Mantener la URL que escribió el usuario
         // Autocompletar fecha de consulta con la fecha actual
         const today = new Date();
@@ -386,7 +392,8 @@ document.addEventListener('DOMContentLoaded', loadModels);
     return pieces.join(' ');
   }
 
-  form.addEventListener('submit', function(evt){
+  if (form) {
+    form.addEventListener('submit', function(evt){
     evt.preventDefault();
     // limpiar mensajes previos
     if(formError) formError.textContent = '';
@@ -443,21 +450,35 @@ document.addEventListener('DOMContentLoaded', loadModels);
 
     const apa = buildAPA(values);
     // `apa` contiene HTML seguro (solo <em> intencional) — mostrar con innerHTML para cursivas
-    referenceEl.innerHTML = apa;
-    referenceEl.focus();
+    if (referenceEl) {
+      referenceEl.innerHTML = apa;
+      referenceEl.focus();
+    }
 
     // después de generar la referencia, intentar guardar en la tabla citations
     (async function(){
-      // determinar campos de modelo / personalizados
+      // determinar campos de modelo / personalizados según las reglas de negocio
+      const selectedModel = modelSelect ? modelSelect.value : '';
+
       let model_id = null;
       let model_name_custom = null;
       let organization_custom = null;
 
-      const selValue = modelSelect ? modelSelect.value : '';
-      if (selValue && selValue !== 'otro') {
-        model_id = selValue;
-      } else {
-        // modelo ingresado manualmente
+      if (selectedModel && selectedModel !== 'otro') {
+        // sólo tratamos como `model_id` cuando tenemos un UUID legítimo
+        // (lo verificamos por caché o por patrón simple) para evitar enviar
+        // nombres como "ChatGPT" cuando se agregan opciones estáticas al
+        // <select>.
+        const looksLikeUuid = /^[0-9a-fA-F\-]{36}$/.test(selectedModel);
+        if (modelCache[selectedModel] || looksLikeUuid) {
+          model_id = selectedModel;
+        } else {
+          // si no es un id conocido, retrocedemos a modo manual
+          model_name_custom = finalModelName || null;
+          organization_custom = values.organization || null;
+        }
+      } else if (selectedModel === 'otro') {
+        // usuario escribió los datos a mano
         model_name_custom = finalModelName || null;
         organization_custom = values.organization || null;
       }
@@ -492,20 +513,23 @@ document.addEventListener('DOMContentLoaded', loadModels);
     })();
   });
 
-  copyBtn.addEventListener('click', async function(){
-    const text = referenceEl.textContent && referenceEl.textContent.trim();
-    if(!text){
-      copyBtn.setAttribute('aria-disabled','true');
-      return;
-    }
-    try{
-      await navigator.clipboard.writeText(text);
-      copyBtn.textContent = 'Copiado ✓';
-      setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
-    }catch(e){
-      console.error('No se pudo copiar', e);
-      copyBtn.textContent = 'Error al copiar';
-      setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
-    }
-  });
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async function(){
+      const text = referenceEl.textContent && referenceEl.textContent.trim();
+      if(!text){
+        copyBtn.setAttribute('aria-disabled','true');
+        return;
+      }
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'Copiado ✓';
+        setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
+      }catch(e){
+        console.error('No se pudo copiar', e);
+        copyBtn.textContent = 'Error al copiar';
+        setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
+      }
+    });
+  }
+  }
 })();

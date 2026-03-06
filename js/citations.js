@@ -53,10 +53,21 @@ export async function getUserCitations(userParam) {
   }
   console.debug('[citations] user id:', user.id);
 
+  // pedimos solamente los campos que realmente usamos y la relación con models
+  // esto hace el join en Supabase; `*` podría traer campos adicionales indeseados.
   const { data, error } = await supabase
     .from('citations')
     .select(`
-      *,
+      id,
+      created_at,
+      citation_text,
+      tema,
+      prompt,
+      llm_response,
+      consulta_fecha,
+      model_id,
+      model_name_custom,
+      organization_custom,
       models (
         id,
         name

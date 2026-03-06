@@ -62,24 +62,14 @@ async function renderHistorial() {
     }
   }
 
+
   // Para cada cita construir tarjeta
   data.forEach(c => {
     const card = document.createElement('article');
     card.className = 'citation-card';
 
-    // model display
-    let modelDisplay = '';
-    if (c.model_id) {
-      // si la relación fue cargada, usarla
-      if (c.models && c.models.name) {
-        modelDisplay = c.models.name;
-      } else {
-        // modelo eliminado o no encontrado
-        modelDisplay = 'Modelo eliminado';
-      }
-    } else {
-      modelDisplay = c.model_name_custom || '';
-    }
+    // model display: prefer relación ya cargada, luego nombre personalizado
+    const modelDisplay = c.models?.name || c.model_name_custom || '—';
 
     card.innerHTML = `
       <div class="citation-text">${c.citation_text || ''}</div>

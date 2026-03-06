@@ -69,20 +69,13 @@ async function renderUserDashboard() {
 
   const totalCitations = data.length;
 
-  // contar modelos usados
+  // contar modelos usados (igual que en historial)
   const modelCounts = {};
   data.forEach(c => {
-    let modelDisplay = '';
-    if (c.model_id) {
-      if (c.models && c.models.name) {
-        modelDisplay = c.models.name;
-      } else {
-        modelDisplay = 'Modelo eliminado';
-      }
-    } else {
-      modelDisplay = c.model_name_custom || '';
+    const modelDisplay = c.models?.name || c.model_name_custom || '—';
+    if (modelDisplay !== '—') {
+      modelCounts[modelDisplay] = (modelCounts[modelDisplay] || 0) + 1;
     }
-    modelCounts[modelDisplay] = (modelCounts[modelDisplay] || 0) + 1;
   });
 
   let mostUsedModel = '';
@@ -117,7 +110,7 @@ async function renderUserDashboard() {
   container.innerHTML = `
     <div class="dashboard-cards">
       <div class="card"><strong>Total de citas:</strong> ${totalCitations}</div>
-      <div class="card"><strong>Modelo más usado:</strong> ${mostUsedModel || 'N/A'}</div>
+      <div class="card"><strong>Modelo más usado:</strong> ${mostUsedModel || '—'}</div>
       <div class="card"><strong>Última cita:</strong> ${lastCitationDate ? new Date(lastCitationDate).toLocaleString('es-ES',{year:'numeric',month:'long',day:'numeric'}) : 'N/A'}</div>
       <div class="card"><strong>Citas este mes:</strong> ${currentMonthCount}</div>
     </div>

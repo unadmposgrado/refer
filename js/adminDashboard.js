@@ -16,7 +16,7 @@ async function renderAdminDashboard() {
     .from('citations')
     .select(`
       *,
-      profiles ( email ),
+      profiles ( id, full_name, email, role ),
       models ( name )
     `)
     .order('created_at', { ascending: false });
@@ -35,34 +35,46 @@ async function renderAdminDashboard() {
 
   citations.forEach(c => {
     if (c.user_id) usersSet.add(c.user_id);
-    let modelDisplay = '';
-    if (c.model_id) {
-      modelDisplay = (c.models && c.models.name) ? c.models.name : 'Modelo eliminado';
-    } else {
-      modelDisplay = c.model_name_custom || '';
+    const modelDisplay = c.models?.name || c.model_name_custom || '—';
+    if (modelDisplay !== '—') {
+      modelCounts[modelDisplay] = (modelCounts[modelDisplay] || 0) + 1;
     }
-    modelCounts[modelDisplay] = (modelCounts[modelDisplay] || 0) + 1;
   });
 
   const totalUsers = usersSet.size;
-  let modeloMasUsado = '';
-  let maxCount = 0;
-  Object.entries(modelCounts).forEach(([m, cnt]) => {
-    if (cnt > maxCount) {
-      maxCount = cnt;
-      modeloMasUsado = m;
-    }
-  });
 
-  // render métricas
+  // reutilizar ranking para determinar modelo más usado
+  const modelRanking = Object.entries(modelCounts)
+    .map(([name, cnt]) => ({ name, count: cnt }))
+    .sort((a, b) => b.count - a.count);
+  const modeloMasUsado = modelRanking[0]?.name || '—';
+
+  // preparar tabla de uso de modelos ordenada descendente
+  // (modelRanking ya calculado arriba aprovechando el reuse anterior)
+
+  // render métricas y ranking
   const dash = document.getElementById('admin-dashboard');
   if (dash) {
+    let rankingHtml = '';
+    if (modelRanking.length) {
+      rankingHtml = `
+        <h3>Modelos más usados (global)</h3>
+        <table class="model-ranking">
+          <thead><tr><th>Modelo</th><th>Total de citas</th></tr></thead>
+          <tbody>
+            ${modelRanking.map(r => `<tr><td>${r.name}</td><td>${r.count}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
     dash.innerHTML = `
       <div class="dashboard-cards">
         <div class="card"><strong>Total citas:</strong> ${totalGlobalCitations}</div>
         <div class="card"><strong>Total usuarios:</strong> ${totalUsers}</div>
-        <div class="card"><strong>Modelo más usado:</strong> ${modeloMasUsado || 'N/A'}</div>
+        <div class="card"><strong>Modelo más usado:</strong> ${modeloMasUsado || '—'}</div>
       </div>
+      ${rankingHtml}
     `;
   }
 
@@ -72,12 +84,7 @@ async function renderAdminDashboard() {
 
   const modelsSet = new Set();
   citations.forEach(c => {
-    let m = '';
-    if (c.model_id) {
-      m = (c.models && c.models.name) ? c.models.name : 'Modelo eliminado';
-    } else {
-      m = c.model_name_custom || '';
-    }
+    const m = c.models?.name || c.model_name_custom || '—';
     modelsSet.add(m);
   });
   const modelsArray = Array.from(modelsSet).sort();
@@ -105,13 +112,9 @@ async function renderAdminDashboard() {
     }
     let html = '<table class="admin-table"><thead><tr><th>Usuario</th><th>Modelo</th><th>Fecha consulta</th><th>Fecha creación</th><th>Texto</th></tr></thead><tbody>';
     records.forEach(c => {
-      const email = c.profiles?.email || '';
-      let modelDisplay = '';
-      if (c.model_id) {
-        modelDisplay = (c.models && c.models.name) ? c.models.name : 'Modelo eliminado';
-      } else {
-        modelDisplay = c.model_name_custom || '';
-      }
+      // profiles ahora incluye el email directamente; full_name se usa como respaldo
+      const email = c.profiles?.email || c.profiles?.full_name || '';
+      const modelDisplay = c.models?.name || c.model_name_custom || '—';
       const consulta = c.consulta_fecha ? new Date(c.consulta_fecha).toLocaleDateString('es-ES') : '';
       const created = c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : '';
       let text = c.citation_text || '';
@@ -136,12 +139,7 @@ async function renderAdminDashboard() {
   const filterTo = document.getElementById('filter-to');
   function applyFilters() {
     const filtered = citations.filter(c => {
-      let modelDisplay = '';
-      if (c.model_id) {
-        modelDisplay = (c.models && c.models.name) ? c.models.name : 'Modelo eliminado';
-      } else {
-        modelDisplay = c.model_name_custom || '';
-      }
+      const modelDisplay = c.models?.name || c.model_name_custom || '—';
       if (filterModel && filterModel.value) {
         if (modelDisplay !== filterModel.value) return false;
       }
@@ -163,7 +161,6 @@ async function renderAdminDashboard() {
     if (el) el.addEventListener('change', applyFilters);
   });
 }
-
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', renderAdminDashboard);
 } else {
