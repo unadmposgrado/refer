@@ -389,8 +389,6 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   margin-top: 2rem;
 }
 
-}
-
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* spacing for historial entries */
