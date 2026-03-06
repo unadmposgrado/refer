@@ -315,7 +315,7 @@ async function renderGlobalCitationHistory() {
       containerTbl.innerHTML = '<p>No hay registros.</p>';
       return;
     }
-    let html = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Programa</th><th>Modelo</th><th>Tema</th><th>Prompt</th><th>Acción</th></tr></thead><tbody>';
+    let html = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Programa</th><th>Modelo</th><th>Tema</th><th>Prompt</th><th>Detalle</th></tr></thead><tbody>';
     pageItems.forEach(c => {
       const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES') : '';
       const user = c.profiles?.full_name || c.profiles?.email || '';
