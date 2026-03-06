@@ -30,7 +30,8 @@ export async function renderMetrics() {
         <table id="usersTable" class="admin-table">
           <thead>
             <tr>
-              <th>Nombre</th>
+                      <th>Nombre</th>
+              <th>Programa educativo</th>
               <th>Email</th>
               <th>Rol</th>
               <th>Citas</th>

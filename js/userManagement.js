@@ -10,7 +10,8 @@ export async function loadUsers() {
   // obtenemos campos directamente de profiles (incluye ahora email de forma nativa)
   const { data: profiles, error: pErr } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role');
+    // include programa educativo para el nuevo campo, manteniendo los demás
+    .select('id, full_name, email, role, program');
   console.debug('[userManagement] loadUsers profiles', profiles, 'error', pErr);
   if (pErr) throw pErr;
 
@@ -93,6 +94,7 @@ export function renderUsersTable(users) {
   tbody.innerHTML = users.map(u => `
     <tr data-user-id="${u.id}">
       <td>${u.full_name || ''}</td>
+      <td>${u.program || ''}</td>
       <td>${u.email || ''}</td>
       <td>
         <select class="roleSelect">
