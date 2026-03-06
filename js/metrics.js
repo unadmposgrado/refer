@@ -3,6 +3,7 @@
 // desde historial.html -> pestaña Metrics). Incluye panel de gestión de usuarios.
 
 import { initializeUserSection } from './userManagement.js';
+import { renderAdminDashboard } from './adminDashboard.js';
 
 export async function renderMetrics() {
   const container = document.getElementById('metrics-section');
@@ -43,8 +44,19 @@ export async function renderMetrics() {
       </div>
       <p id="userTableMessage" style="display:none;"></p>
     </div>
+
+    <!-- nuevo módulo historial global de uso de IA -->
+    <section id="global-history-module">
+      <h2>Historial global de uso de IA</h2>
+      <div id="history-filters"></div>
+      <div id="history-summary"></div>
+      <div id="history-table-container"></div>
+      <div id="history-pagination"></div>
+    </section>
   `;
 
   // luego inicializamos la sección de usuarios (datos, eventos, etc.)
   await initializeUserSection();
+  // ahora agregamos el módulo global de historial llamando a la lógica de administrador
+  renderAdminDashboard();
 }

@@ -350,6 +350,47 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   font-size: 1rem;
 }
 
+/* clases de color según el modelo */
+.model-chatgpt { color: green; font-weight:600; }
+.model-gemini { color: blue; font-weight:600; }
+.model-claude { color: purple; font-weight:600; }
+
+/* modal simple para mostrar detalles de cita */
+.history-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.history-modal {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+}
+.history-modal .close-modal {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* espacio antes del módulo de historial global */
+#global-history-module {
+  margin-top: 2rem;
+}
+
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* spacing for historial entries */
