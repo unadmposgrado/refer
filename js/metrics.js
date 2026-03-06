@@ -21,23 +21,25 @@ export async function renderMetrics() {
         <input type="text" id="userSearch" placeholder="Buscar por nombre o email">
         <select id="roleFilter">
           <option value="all">Todos</option>
-          <option value="user">Usuarios normales</option>
+          <option value="user">Usuarios</option>
           <option value="admin">Administradores</option>
         </select>
       </div>
 
-      <table id="usersTable">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Citas</th>
-            <th>Modelo más usado</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-responsive">
+        <table id="usersTable" class="admin-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Citas</th>
+              <th>Modelo más usado</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
       <p id="userTableMessage" style="display:none;"></p>
     </div>
   `;

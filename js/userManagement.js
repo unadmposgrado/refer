@@ -66,7 +66,7 @@ export function calculateUserMetrics(users) {
     metricsDiv.innerHTML = `
       <div class="dashboard-cards">
         <div class="card"><strong>Usuarios totales:</strong> ${total}</div>
-        <div class="card"><strong>Usuarios normales:</strong> ${normal}</div>
+        <div class="card"><strong>Usuarios:</strong> ${normal}</div>
         <div class="card"><strong>Administradores:</strong> ${admins}</div>
       </div>
     `;
@@ -96,7 +96,7 @@ export function renderUsersTable(users) {
       <td>${u.email || ''}</td>
       <td>
         <select class="roleSelect">
-          <option value="user"${u.role==='user'?' selected':''}>Normal</option>
+          <option value="user"${u.role==='user'?' selected':''}>Usuario</option>
           <option value="admin"${u.role==='admin'?' selected':''}>Admin</option>
         </select>
       </td>

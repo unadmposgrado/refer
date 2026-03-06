@@ -275,15 +275,56 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   flex: 1 1 150px;
 }
 
+/* estilos comunes para tablas administrativas */
 .admin-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.admin-table thead {
+  background-color: var(--accent);
+  color: var(--accent-contrast);
+}
+/* encabezados centrados */
+.admin-table thead th {
+  text-align: center;
+}
+.admin-table tbody tr:nth-child(odd) {
+  background-color: #f9fafb;
+}
+.admin-table tbody tr:hover {
+  background-color: #f1f5f9;
 }
 .admin-table th,
 .admin-table td {
   border: 1px solid var(--border);
-  padding: .5rem;
+  padding: .5rem .75rem;
   text-align: left;
+}
+
+/* selects dentro de tablas administrativas (por ej. rol) */
+.admin-table select {
+  padding: .25rem .4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+/* responsividad y tamaño para pantallas pequeñas */
+@media (max-width: 640px) {
+  .admin-table {
+    font-size: 0.8rem;
+  }
+  .admin-table th,
+  .admin-table td {
+    padding: .4rem .5rem;
+  }
+}
+
+/* contenedor para evitar overflow horizontal */
+.table-responsive {
+  overflow-x: auto;
 }
 
 #filters,
@@ -298,6 +339,15 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   display: flex;
   flex-direction: column;
   font-weight: 600;
+}
+
+/* entradas y selects de los filtros administrativos */
+.filters input[type="text"],
+.filters select {
+  padding: .5rem .6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
 }
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
