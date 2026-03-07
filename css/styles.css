@@ -53,13 +53,23 @@ body{
   display:flex;
   gap:.5rem;
 }
+/* el botón de "Inicia sesión" utiliza .btn-secondary en el header, pero ahí
+   queremos que se vea igual que el primario. En su estado normal no debe llevar
+   el borde gris ni el fondo claro. */
+.header-actions .btn-secondary{
+  background: #29473f; /* mismo color que .btn-primary */
+  color: var(--accent-contrast);
+  border: 0;
+}
 .header-actions button{
   transition:transform .2s ease, background-color .2s ease, color .2s ease;
 }
+/* en hover ambos botones muestran el recuadro gris con fondo claro en lugar del
+   acento azul que desentonaba */
 .header-actions button:hover{
   transform:translateY(-2px);
-  background-color:var(--accent);
-  color:var(--accent-contrast);
+  background-color: var(--header-menu-hover-bg);
+  color: var(--header-menu-color);
 }
 
 /* navegación principal cuando el usuario está logueado */

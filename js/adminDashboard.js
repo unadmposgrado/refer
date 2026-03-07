@@ -172,36 +172,61 @@ async function renderGlobalCitationHistory() {
   const container = document.getElementById('global-history-module');
   if (!container) return; // nada que hacer si no existe
 
-  // obtener todas las citas con los campos necesarios (incluyendo programa)
-  const { data, error } = await supabase
-    .from('citations')
-    .select(`
-      id,
-      created_at,
-      tema,
-      prompt,
-      citation_text,
-      llm_response,
-      user_id,
-      model_id,
-      model_name_custom,
-      models(name),
-      profiles(full_name,email,program)
-    `)
-    .order('created_at', { ascending: false });
+  // --- paginación del lado del servidor --------------------------------
+  // constants para control de páginas
+  const PAGE_SIZE = 20;
+  let currentPage = 1;
+  let totalRows = 0;       // número total de registros (tras aplicar filtros locales)
 
-  if (error) {
-    console.error('Error fetching global citation history:', error);
-    container.innerHTML = '<p>Error cargando historial global de IA.</p>';
-    return;
+  // el arreglo `citations` contendrá únicamente la página actual
+  let citations = [];
+  // `filtered` seguirá usándose para modificaciones locales tras aplicar
+  // filtros sobre los datos cargados en la página.
+  let filtered = [];
+
+  // helper que solicita una página al servidor y actualiza el estado local
+  async function loadPage() {
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error, count } = await supabase
+      .from('citations')
+      .select(`
+        id,
+        created_at,
+        tema,
+        prompt,
+        citation_text,
+        llm_response,
+        user_id,
+        model_id,
+        model_name_custom,
+        models(name),
+        profiles(full_name,email,program)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      console.error('Error fetching global citation history:', error);
+      container.innerHTML = '<p>Error cargando historial global de IA.</p>';
+      citations = [];
+      filtered = [];
+      totalRows = 0;
+      return;
+    }
+
+    citations = data || [];
+    filtered = [...citations];
+    totalRows = count || citations.length;
+
+    renderSummary();
+    renderTablePage();
+    renderPagination();
   }
 
-  const citations = data || [];
-
-  // variables de estado de paginación
-  let filtered = [...citations];
-  let currentPage = 1;
-  const pageSize = 50;
+  // cargar la primera página inmediatamente
+  await loadPage();
 
   // helpers para métricas
   function computeSummary(records) {
@@ -292,7 +317,7 @@ async function renderGlobalCitationHistory() {
     renderPagination();
   }
 
-  // render de resumen
+  // render de resumen (resume sobre los datos actualmente filtrados/paginados)
   function renderSummary() {
     const sum = computeSummary(filtered);
     const scont = document.getElementById('history-summary');
@@ -307,12 +332,12 @@ async function renderGlobalCitationHistory() {
     `;
   }
 
-  // tabla y paginación
+  // tabla y paginación renderizada desde el arreglo `filtered` (sólo página actual)
   function renderTablePage() {
-    const start = (currentPage-1)*pageSize;
-    const pageItems = filtered.slice(start, start+pageSize);
     const containerTbl = document.getElementById('history-table-container');
     if (!containerTbl) return;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + PAGE_SIZE);
     if (pageItems.length === 0) {
       containerTbl.innerHTML = '<p>No hay registros.</p>';
       return;
@@ -343,7 +368,8 @@ async function renderGlobalCitationHistory() {
     containerTbl.querySelectorAll('.view-citation').forEach(btn => {
       btn.addEventListener('click', () => {
         const cid = btn.getAttribute('data-id');
-        const citation = citations.find(x=>String(x.id)===cid);
+        // buscar en la página filtrada (o en la página completa si no hay filtros)
+        const citation = filtered.find(x=>String(x.id)===cid) || citations.find(x=>String(x.id)===cid);
         if (citation) showCitationModal(citation);
       });
     });
@@ -352,17 +378,40 @@ async function renderGlobalCitationHistory() {
   function renderPagination() {
     const pag = document.getElementById('history-pagination');
     if (!pag) return;
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    // determinar si hay filtros activos
+    const userVal = document.getElementById('filter-user')?.value || '';
+    const progVal = document.getElementById('filter-program')?.value || '';
+    const modelVal = document.getElementById('filter-model')?.value || '';
+    const dateVal = document.getElementById('filter-date')?.value || '';
+    const filtersActive = userVal || progVal || modelVal || dateVal;
+
+    const totalPages = Math.max(1, Math.ceil((filtersActive ? filtered.length : totalRows) / PAGE_SIZE));
     pag.innerHTML = `
       <button id="prev-page" ${currentPage===1?'disabled':''}>Anterior</button>
       <span>Página ${currentPage} de ${totalPages}</span>
       <button id="next-page" ${currentPage===totalPages?'disabled':''}>Siguiente</button>
     `;
     document.getElementById('prev-page')?.addEventListener('click', () => {
-      if (currentPage>1) { currentPage--; renderTablePage(); renderPagination(); }
+      if (currentPage>1) {
+        currentPage--;
+        if (filtersActive) {
+          renderTablePage();
+          renderPagination();
+        } else {
+          loadPage();
+        }
+      }
     });
     document.getElementById('next-page')?.addEventListener('click', () => {
-      if (currentPage<totalPages) { currentPage++; renderTablePage(); renderPagination(); }
+      if (currentPage<totalPages) {
+        currentPage++;
+        if (filtersActive) {
+          renderTablePage();
+          renderPagination();
+        } else {
+          loadPage();
+        }
+      }
     });
   }
 
