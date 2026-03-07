@@ -172,6 +172,54 @@ async function renderGlobalCitationHistory() {
   const container = document.getElementById('global-history-module');
   if (!container) return; // nada que hacer si no existe
 
+  // helper para convertir datos a CSV y disparar la descarga
+  function exportToCSV(records) {
+    if (!records || records.length === 0) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+    const headers = [
+      'Fecha',
+      'Usuario',
+      'Programa',
+      'Modelo',
+      'Tema',
+      'Prompt'
+    ];
+
+    const rows = records.map(c => {
+      const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '';
+      const user = c.profiles?.full_name || c.profiles?.email || '';
+      const prog = c.profiles?.program || '';
+      const model = c.models?.name || c.model_name_custom || 'Desconocido';
+      const tema = c.tema || '';
+      const prompt = c.prompt || '';
+      return [date, user, prog, model, tema, prompt];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'historial_uso_ia.csv';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // --- paginación del lado del servidor --------------------------------
   // constants para control de páginas
   const PAGE_SIZE = 20;
@@ -459,6 +507,16 @@ async function renderGlobalCitationHistory() {
   renderSummary();
   renderTablePage();
   renderPagination();
+
+  // listener para botón exportar (usa los mismos datos que la tabla)
+  const exportBtn = document.getElementById('export-csv');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      // preferimos la versión filtrada; si no hay nada usamos la página
+      const toExport = filtered.length ? filtered : citations;
+      exportToCSV(toExport);
+    });
+  }
 }
 
 if (document.readyState === 'loading') {
