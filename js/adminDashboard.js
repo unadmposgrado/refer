@@ -172,8 +172,8 @@ async function renderGlobalCitationHistory() {
   const container = document.getElementById('global-history-module');
   if (!container) return; // nada que hacer si no existe
 
-  // helper para convertir datos a CSV y disparar la descarga
-  function exportToCSV(records) {
+  // helper para convertir datos a CSV y disparar la descarga (usa un BOM para Excel)
+  function exportToCSV(records, filename = 'historial_uso_ia.csv') {
     if (!records || records.length === 0) {
       alert('No hay datos para exportar.');
       return;
@@ -203,7 +203,8 @@ async function renderGlobalCitationHistory() {
       return [date, user, prog, model, tema, prompt];
     });
 
-    const csvContent = [
+    const BOM = '\uFEFF';
+    const csvContent = BOM + [
       headers.join(','),
       ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
@@ -213,11 +214,67 @@ async function renderGlobalCitationHistory() {
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'historial_uso_ia.csv';
+    link.download = filename;
 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  // nueva función independiente que obtiene todo el historial desde Supabase
+  async function exportarHistorialCompleto() {
+    try {
+      const { data, error } = await supabase
+        .from('citations')
+        .select(`
+          created_at,
+          user_id,
+          citation_text,
+          models(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching full history for CSV export:', error);
+        alert('No se pudo descargar el historial. Intente de nuevo más tarde.');
+        return;
+      }
+
+      const records = data || [];
+      // transform para CSV simples
+      const headers = ['Fecha', 'Usuario', 'Modelo IA', 'Referencia generada'];
+      const rows = records.map(c => {
+        const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : '';
+        const user = c.user_id || '';
+        const model = c.models?.name || '';
+        const ref = c.citation_text || '';
+        return [date, user, model, ref];
+      });
+
+      const BOM = '\uFEFF';
+      const csvContent = BOM + [
+        headers.join(','),
+        ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'historial_global_citas_IA.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('Unexpected error exporting full history CSV', e);
+      alert('Ocurrió un error inesperado.');
+    }
   }
 
   // --- paginación del lado del servidor --------------------------------
@@ -508,14 +565,10 @@ async function renderGlobalCitationHistory() {
   renderTablePage();
   renderPagination();
 
-  // listener para botón exportar (usa los mismos datos que la tabla)
+  // listener para botón exportar: ahora solicita todo el historial desde el servidor
   const exportBtn = document.getElementById('export-csv');
   if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-      // preferimos la versión filtrada; si no hay nada usamos la página
-      const toExport = filtered.length ? filtered : citations;
-      exportToCSV(toExport);
-    });
+    exportBtn.addEventListener('click', exportarHistorialCompleto);
   }
 }
 
