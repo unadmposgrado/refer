@@ -224,12 +224,16 @@ async function renderGlobalCitationHistory() {
   // nueva función independiente que obtiene todo el historial desde Supabase
   async function exportarHistorialCompleto() {
     try {
+      // consulta independiente para traer todo el historial enriquecido
       const { data, error } = await supabase
         .from('citations')
         .select(`
           created_at,
-          user_id,
-          citation_text,
+          tema,
+          prompt,
+          llm_response,
+          model_name_custom,
+          profiles(full_name, program),
           models(name)
         `)
         .order('created_at', { ascending: false });
@@ -241,33 +245,47 @@ async function renderGlobalCitationHistory() {
       }
 
       const records = data || [];
-      // transform para CSV simples
-      const headers = ['Fecha', 'Usuario', 'Modelo IA', 'Referencia generada'];
+      // columnas exactas solicitadas
+      const headers = [
+        'Fecha',
+        'Hora',
+        'Usuario',
+        'Programa',
+        'Modelo',
+        'Tema',
+        'Prompt',
+        'Respuesta del LLM'
+      ];
+
       const rows = records.map(c => {
-        const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : '';
-        const user = c.user_id || '';
-        const model = c.models?.name || '';
-        const ref = c.citation_text || '';
-        return [date, user, model, ref];
+        const dt = c.created_at ? new Date(c.created_at) : null;
+        const fecha = dt ? dt.toLocaleDateString('es-MX') : '';
+        const hora = dt
+          ? dt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+          : '';
+        const usuario = c.profiles?.full_name || '';
+        const programa = c.profiles?.program || '';
+        let modelo = '';
+        if (c.models?.name) modelo = c.models.name;
+        else if (c.model_name_custom) modelo = c.model_name_custom;
+        else modelo = 'No especificado';
+        const tema = c.tema || '';
+        const prompt = c.prompt || '';
+        const respuesta = c.llm_response || '';
+        return [fecha, hora, usuario, programa, modelo, tema, prompt, respuesta];
       });
 
       const BOM = '\uFEFF';
-      const csvContent = BOM + [
-        headers.join(','),
-        ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      ].join('\n');
+      const csvRows = [headers.join(',')].concat(
+        rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      );
+      const csvContent = BOM + csvRows.join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'historial_global_citas_IA.csv';
+      link.download = 'historial_global_uso_ia.csv';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
