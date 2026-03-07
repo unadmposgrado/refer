@@ -8,7 +8,9 @@ async function renderAdminDashboard() {
   await requireAuth();
   const role = await getUserRole();
   if (role !== 'admin') {
-    location.href = 'index.html';
+    // no damos permiso a usuarios normales; en lugar de sacar fuera
+    // del dashboard simplemente dejamos de renderizar el panel global.
+    console.warn('[adminDashboard] llamado por no‑admin', role);
     return;
   }
 

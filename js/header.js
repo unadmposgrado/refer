@@ -116,7 +116,7 @@ async function loadHeader() {
               console.warn('Error cerrando sesión', err);
             }
           }
-          location.href = 'login.html';
+          location.href = 'index.html';
         });
       }
 

@@ -32,12 +32,14 @@ async function showMetrics() {
     await requireAuth();
     const role = await getUserRole();
     if (role !== 'admin') {
-      // si alguien intenta acceder sin permiso, mostramos historial en su lugar
+      console.warn('[dashboard] showMetrics invoked by non‑admin', role);
+      // devolvemos al historial sin redirección externa
       showHistorial();
       return;
     }
   } catch (e) {
-    return; // redirección ya ejecutada
+    // requireAuth ya habrá redirigido si no hay sesión
+    return;
   }
 
   showSection('metrics-section');
@@ -57,6 +59,7 @@ async function renderUserDashboard() {
     return;
   }
 
+  // recuperar métricas personales de las citas
   let result;
   try {
     result = await getUserCitations(user);
@@ -66,7 +69,6 @@ async function renderUserDashboard() {
   }
 
   const data = result.data || [];
-
   const totalCitations = data.length;
 
   // contar modelos usados (igual que en historial)
@@ -87,7 +89,7 @@ async function renderUserDashboard() {
     }
   });
 
-  // obtener fecha de última cita por created_at
+  // fecha de última cita
   let lastCitationDate = '';
   if (data.length) {
     const latest = data.reduce((a, b) => {
@@ -96,7 +98,7 @@ async function renderUserDashboard() {
     lastCitationDate = latest.created_at;
   }
 
-  // contar citas del mes actual
+  // citas del mes actual
   const now = new Date();
   const currentMonthCount = data.filter(c => {
     if (!c.created_at) return false;
@@ -117,25 +119,48 @@ async function renderUserDashboard() {
   `;
 }
 
-// En la carga inicial, eligimos qué sección mostrar según hash
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const h = location.hash;
-    if (h === '#metrics') {
-      showMetrics();
-    } else {
-      showHistorial();
-    }
-    renderUserDashboard();
-  });
-} else {
-  const h = location.hash;
-  if (h === '#metrics') {
-    showMetrics();
-  } else {
-    showHistorial();
-  }
+// helper que encapsula la carga apropiada del dashboard para usuarios
+async function loadUserDashboard() {
+  // simplemente invocamos al módulo historial y actualizamos métricas 
+  await showHistorial();
   renderUserDashboard();
+}
+
+// inicializador que elige sección en función del rol y, dentro de él, del hash
+async function initDashboardSections() {
+  // protegernos contra usuarios no autenticados
+  try {
+    await requireAuth();
+  } catch (e) {
+    // requireAuth ya efectuó la redirección correspondiente
+    return;
+  }
+
+  const role = await getUserRole();
+  switch (role) {
+    case 'admin':
+      // para administradores respetamos el hash (#metrics o #historial)
+      if (location.hash === '#metrics') {
+        await showMetrics();
+      } else {
+        await showHistorial();
+      }
+      break;
+
+    case 'user':
+    default:
+      // cualquier otro rol se comporta como usuario normal; el módulo
+      // historial ya gestiona la protección internamente
+      await loadUserDashboard();
+      break;
+  }
+}
+
+// En la carga inicial arrancamos el inicializador anterior
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDashboardSections);
+} else {
+  initDashboardSections();
 }
 
 // también añadimos a `window` para que los scripts que no importan el módulo puedan invocarlos
@@ -143,4 +168,4 @@ window.showSection = showSection;
 window.showHistorial = showHistorial;
 window.showMetrics = showMetrics;
 
-export { renderUserDashboard, showSection, showHistorial, showMetrics };
+export { renderUserDashboard, showSection, showHistorial, showMetrics, loadUserDashboard, initDashboardSections };
