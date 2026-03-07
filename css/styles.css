@@ -1,6 +1,7 @@
 /* Estilos simples, limpios y responsive */
 :root{
   --max-width: 800px;
+  --dashboard-max-width: 1400px;
   --gap: 1rem;
   --bg: #ffffff;
   --muted: #6b7280;
@@ -28,6 +29,13 @@ body{
   max-width:var(--max-width);
   margin:0 auto;
   padding:1rem;
+}
+
+/* contenedor específico para dashboards más anchos */
+.dashboard-container{
+  max-width: var(--dashboard-max-width);
+  margin: 0 auto;
+  padding: 1rem;
 }
 .site-header{
   border-bottom:1px solid var(--border);
@@ -412,19 +420,57 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   background: #ffffff;
   border: 1px solid #e3e3e3;
   border-radius: 8px;
-  padding: 20px;
+  /* reducir espacio vertical y dar más espacio horizontal en escritorio */
+  padding: 10px 20px;
   margin-top: 30px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  /* permitir que el módulo se ensanche hasta el 80% de la ventana y centrarse */
+  max-width: 80vw;
+  margin-left: auto;
+  margin-right: auto;
 }
 .admin-module-header {
-  margin-bottom: 15px;
+  margin-bottom: 8px; /* menos espacio debajo del encabezado */
   border-bottom: 1px solid #eee;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
+}
+
+/* Encabezados dentro de módulos no deberían tener márgenes extra */
+.admin-module-header h2,
+.admin-module-header h3 {
+  margin: 0;
+  padding: 0;
+}
+
+/* en pantallas grandes damos más padding horizontal para evitar que el contenido se amontone */
+@media (min-width: 1024px) {
+  .admin-module {
+    padding: 15px 40px;
+  }
 }
 
 /* espacio antes del módulo de historial global */
 #global-history-module {
   margin-top: 2rem;
+}
+
+/* filtros de historial global: separa los elementos y añade margen inferior */
+#history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem; /* espacio entre input y selects */
+  margin-bottom: 1rem; /* distancia respecto a las métricas */
+}
+#history-filters input,
+#history-filters select {
+  /* permitir que los controles no se agrupen demasiado en pantallas pequeñas */
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+/* separar un poco las métricas que aparecen debajo de los filtros */
+#history-summary {
+  margin-top: 1rem;
 }
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
