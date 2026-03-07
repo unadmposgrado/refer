@@ -20,6 +20,13 @@ async function showHistorial() {
   showSection('historial-section');
   // refrescar contenido cuando se vuelve a la pestaña
   await renderHistorial();
+
+  // también renderizamos las métricas personales siempre que se muestre
+  // el historial; esto cubre a usuarios y administradores y evita tener
+  // que invocar la función manualmente cada vez que el admin cambie de
+  // sección dentro del dashboard.
+  renderUserDashboard();
+
   // actualizar hash para reflectar estado
   if (location.hash !== '#historial') {
     history.replaceState(null, '', 'historial.html#historial');
@@ -120,10 +127,12 @@ async function renderUserDashboard() {
 }
 
 // helper que encapsula la carga apropiada del dashboard para usuarios
+// (y ahora también puede servirse para administradores que quieran ver
+// sus métricas personales en conjunto con su historial).
 async function loadUserDashboard() {
-  // simplemente invocamos al módulo historial y actualizamos métricas 
+  // showHistorial ya se encarga de invocar renderUserDashboard, así que
+  // simplemente esperamos a su ejecución.
   await showHistorial();
-  renderUserDashboard();
 }
 
 // inicializador que elige sección en función del rol y, dentro de él, del hash
@@ -139,7 +148,10 @@ async function initDashboardSections() {
   const role = await getUserRole();
   switch (role) {
     case 'admin':
-      // para administradores respetamos el hash (#metrics o #historial)
+      // para administradores respetamos el hash (#metrics o #historial).
+      // cuando no se solicita métricas globales, mostramos el historial tal
+      // como lo haría un usuario normal; showHistorial se encarga de
+      // añadir las métricas personales.
       if (location.hash === '#metrics') {
         await showMetrics();
       } else {

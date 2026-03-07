@@ -8,6 +8,9 @@
   --accent-contrast: #ffffff;
   --border: #e5e7eb;
 
+  /* color de fondo del header y de los encabezados de tablas administrativas */
+  --header-bg: #29473f;
+
   /* colores compartidos para las opciones de menú del header */
   --header-menu-color: #111827;
   --header-menu-hover-bg: #f3f4f6;
@@ -28,7 +31,7 @@ body{
 }
 .site-header{
   border-bottom:1px solid var(--border);
-  background:#29473f;
+  background: var(--header-bg);
   color:#ffffff;
   max-height:60px;
   /* necesario para que el menú desplegable pueda sobresalir */
@@ -282,7 +285,8 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
   font-size: 0.9rem;
 }
 .admin-table thead {
-  background-color: var(--accent);
+  /* utilizar el mismo color del header principal para coherencia */
+  background-color: var(--header-bg);
   color: var(--accent-contrast);
 }
 /* encabezados centrados */
@@ -304,6 +308,15 @@ input:focus, textarea:focus{outline:3px solid rgba(37,99,235,.15);border-color:v
 
 /* selects dentro de tablas administrativas (por ej. rol) */
 .admin-table select {
+  padding: .25rem .4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+/* reutilizar mismo estilo para los filtros del historial global */
+#history-filters select {
   padding: .25rem .4rem;
   border: 1px solid var(--border);
   border-radius: 4px;
