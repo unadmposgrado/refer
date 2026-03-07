@@ -344,7 +344,14 @@ async function renderGlobalCitationHistory() {
     }
     let html = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Programa</th><th>Modelo</th><th>Tema</th><th>Prompt</th><th>Detalle</th></tr></thead><tbody>';
     pageItems.forEach(c => {
-      const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES') : '';
+      // format fecha+hora sin segundos para el historial global
+      const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '';
       const user = c.profiles?.full_name || c.profiles?.email || '';
       const prog = c.profiles?.program || '';
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
@@ -430,7 +437,13 @@ async function renderGlobalCitationHistory() {
         <p><strong>Prompt:</strong> ${c.prompt||''}</p>
         <p><strong>Respuesta:</strong> ${c.llm_response||''}</p>
         <p><strong>Referencia APA:</strong> ${c.citation_text||''}</p>
-        <p><strong>Fecha:</strong> ${c.created_at?new Date(c.created_at).toLocaleString('es-ES') : ''}</p>
+        <p><strong>Fecha:</strong> ${c.created_at?new Date(c.created_at).toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : ''}</p>
       </div>
     `;
     modal.addEventListener('click', e => {
