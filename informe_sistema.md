@@ -81,7 +81,7 @@ El navegador del usuario ejecuta el código JS, que llama a `supabase` (cliente)
     Banner SSA - copia.png
     IA_icon.png
     index.jpg
-    refer.png
+    cita.png
     referencia.png
     referenciaAI.png
     referenciaPC.png
