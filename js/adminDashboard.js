@@ -18,7 +18,14 @@ async function renderAdminDashboard() {
     .from('citations')
     .select(`
       *,
-      profiles ( id, full_name, email, role ),
+      profiles (
+        id,
+        full_name,
+        email,
+        role,
+        program_id,
+        programs(id, nombre, nivel, division)
+      ),
       models ( name )
     `)
     .order('created_at', { ascending: false });
