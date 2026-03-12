@@ -196,7 +196,7 @@ async function renderGlobalCitationHistory() {
         minute: '2-digit'
       }) : '';
       const user = c.profiles?.full_name || c.profiles?.email || '';
-      const prog = c.profiles?.program || '';
+      const prog = c.profiles?.programs?.nombre || 'Desconocido';
       const model = c.models?.name || c.model_name_custom || 'Desconocido';
       const tema = c.tema || '';
       const prompt = c.prompt || '';
@@ -233,7 +233,7 @@ async function renderGlobalCitationHistory() {
           prompt,
           llm_response,
           model_name_custom,
-          profiles(full_name, program),
+          profiles(full_name, programs(nombre, nivel, division)),
           models(name)
         `)
         .order('created_at', { ascending: false });
@@ -264,7 +264,7 @@ async function renderGlobalCitationHistory() {
           ? dt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
           : '';
         const usuario = c.profiles?.full_name || '';
-        const programa = c.profiles?.program || '';
+        const programa = c.profiles?.programs?.nombre || 'Desconocido';
         let modelo = '';
         if (c.models?.name) modelo = c.models.name;
         else if (c.model_name_custom) modelo = c.model_name_custom;
@@ -325,7 +325,7 @@ async function renderGlobalCitationHistory() {
         model_id,
         model_name_custom,
         models(name),
-        profiles(full_name,email,program)
+        profiles(full_name,email,programs(nombre, nivel, division))
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -362,7 +362,7 @@ async function renderGlobalCitationHistory() {
       if (c.user_id) users.add(c.user_id);
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
       modelCounts[m] = (modelCounts[m] || 0) + 1;
-      const prog = c.profiles?.program || 'Desconocido';
+      const prog = c.profiles?.programs?.nombre || 'Desconocido';
       programCounts[prog] = (programCounts[prog] || 0) + 1;
     });
 
@@ -378,7 +378,7 @@ async function renderGlobalCitationHistory() {
     const programs = new Set();
     const models = new Set();
     citations.forEach(c => {
-      if (c.profiles?.program) programs.add(c.profiles.program);
+      if (c.profiles?.programs?.nombre) programs.add(c.profiles.programs.nombre);
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
       models.add(m);
     });
@@ -420,7 +420,7 @@ async function renderGlobalCitationHistory() {
         if (!name.includes(userVal) && !email.includes(userVal)) return false;
       }
       // programa
-      if (progVal && c.profiles?.program !== progVal) return false;
+      if (progVal && c.profiles?.programs?.nombre !== progVal) return false;
       // modelo
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
       if (modelVal && m !== modelVal) return false;
@@ -476,7 +476,7 @@ async function renderGlobalCitationHistory() {
         minute: '2-digit'
       }) : '';
       const user = c.profiles?.full_name || c.profiles?.email || '';
-      const prog = c.profiles?.program || '';
+      const prog = c.profiles?.programs?.nombre || 'Desconocido';
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
       let prompt = c.prompt || '';
       if (prompt.length > 50) prompt = prompt.slice(0,50)+'…';
@@ -554,7 +554,7 @@ async function renderGlobalCitationHistory() {
         <button class="close-modal">×</button>
         <h3>Detalle de cita</h3>
         <p><strong>Usuario:</strong> ${c.profiles?.full_name||c.profiles?.email||''}</p>
-        <p><strong>Programa:</strong> ${c.profiles?.program||''}</p>
+        <p><strong>Programa:</strong> ${c.profiles?.programs?.nombre||'Desconocido'}</p>
         <p><strong>Modelo:</strong> ${c.models?.name||c.model_name_custom||'Desconocido'}</p>
         <p><strong>Tema:</strong> ${c.tema||''}</p>
         <p><strong>Prompt:</strong> ${c.prompt||''}</p>

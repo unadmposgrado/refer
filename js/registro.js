@@ -5,15 +5,151 @@
 // 🔹 CONFIGURACIÓN SUPABASE (cliente centralizado)
 // =============================
 import { supabase } from './supabaseClient.js';
+import { getNiveles, getDivisiones, getProgramas, getProgramasPorNivel } from './catalogos/programas.js';
 
 
 // =============================
 // 🔹 INICIALIZACIÓN
 // =============================
-function initRegister() {
+async function initRegister() {
   // sólo manejamos el envío del formulario; la navegación del botón se hace en header.js
   const form = document.getElementById('registerForm');
-  if (form) form.addEventListener('submit', handleRegister);
+  if (form) {
+    form.addEventListener('submit', handleRegister);
+    
+    // Inicializar selects de programas
+    await initProgramSelects();
+    
+    // Agregar listeners para cambios en nivel y división
+    const nivelSelect = document.getElementById('nivel');
+    const divisionSelect = document.getElementById('division');
+    
+    if (nivelSelect) nivelSelect.addEventListener('change', handleNivelChange);
+    if (divisionSelect) divisionSelect.addEventListener('change', handleDivisionChange);
+  }
+}
+
+// =============================
+// 🔹 INICIALIZAR SELECTS DE PROGRAMAS
+// =============================
+async function initProgramSelects() {
+  const nivelSelect = document.getElementById('nivel');
+  
+  if (!nivelSelect) return;
+  
+  try {
+    const niveles = await getNiveles();
+    nivelSelect.innerHTML = '<option value="">Selecciona un nivel</option>';
+    
+    niveles.forEach(nivel => {
+      const option = document.createElement('option');
+      option.value = nivel;
+      option.textContent = nivel;
+      nivelSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error al cargar niveles:', error);
+  }
+}
+
+// =============================
+// 🔹 MANEJAR CAMBIO DE NIVEL
+// =============================
+async function handleNivelChange(event) {
+  const nivel = event.target.value;
+  const divisionSelect = document.getElementById('division');
+  const divisionContainer = document.getElementById('division-container');
+  const programaSelect = document.getElementById('programa');
+  
+  // Limpiar división y programa
+  if (divisionSelect) divisionSelect.innerHTML = '<option value="">Selecciona una división</option>';
+  if (programaSelect) {
+    programaSelect.innerHTML = '<option value="">Selecciona un programa</option>';
+    programaSelect.disabled = true;
+  }
+  if (divisionContainer) divisionContainer.style.display = 'none';
+  
+  if (!nivel) return;
+  
+  try {
+    // Obtener divisiones para este nivel
+    const divisiones = await getDivisiones(nivel);
+    
+    if (divisiones.length > 0) {
+      // Si existen divisiones, mostrarlas
+      if (divisionContainer) divisionContainer.style.display = 'block';
+      if (divisionSelect) {
+        divisionSelect.innerHTML = '<option value="">Selecciona una división</option>';
+        divisiones.forEach(division => {
+          const option = document.createElement('option');
+          option.value = division;
+          option.textContent = division;
+          divisionSelect.appendChild(option);
+        });
+      }
+    } else {
+      // Si no hay divisiones, cargar programas directamente
+      await loadProgramasPorNivel(nivel);
+    }
+  } catch (error) {
+    console.error('Error al cambiar nivel:', error);
+  }
+}
+
+// =============================
+// 🔹 MANEJAR CAMBIO DE DIVISIÓN
+// =============================
+async function handleDivisionChange(event) {
+  const division = event.target.value;
+  const nivelSelect = document.getElementById('nivel');
+  const programaSelect = document.getElementById('programa');
+  
+  if (!division || !nivelSelect) return;
+  
+  const nivel = nivelSelect.value;
+  
+  try {
+    const programas = await getProgramas(nivel, division);
+    
+    if (programaSelect) {
+      programaSelect.innerHTML = '<option value="">Selecciona un programa</option>';
+      programaSelect.disabled = false;
+      
+      programas.forEach(programa => {
+        const option = document.createElement('option');
+        option.value = programa.id;
+        option.textContent = programa.nombre;
+        programaSelect.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error('Error al cambiar división:', error);
+  }
+}
+
+// =============================
+// 🔹 CARGAR PROGRAMAS POR NIVEL (SIN DIVISIÓN)
+// =============================
+async function loadProgramasPorNivel(nivel) {
+  const programaSelect = document.getElementById('programa');
+  
+  try {
+    const programas = await getProgramasPorNivel(nivel);
+    
+    if (programaSelect) {
+      programaSelect.innerHTML = '<option value="">Selecciona un programa</option>';
+      programaSelect.disabled = false;
+      
+      programas.forEach(programa => {
+        const option = document.createElement('option');
+        option.value = programa.id;
+        option.textContent = programa.nombre;
+        programaSelect.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error('Error al cargar programas por nivel:', error);
+  }
 }
 
 
@@ -34,11 +170,11 @@ async function handleRegister(event) {
   const password = form.password.value.trim();
   const confirmPassword = form.confirmPassword.value.trim();
   const fullName = form.fullName.value.trim();
-  const program = form.program.value.trim();
+  const programa = form.programa.value.trim();
   const matricula = form.matricula.value.trim(); // opcional
 
   // validaciones básicas
-  if (!email || !password || !confirmPassword || !fullName || !program) {
+  if (!email || !password || !confirmPassword || !fullName || !programa) {
     alert('Por favor completa todos los campos obligatorios.');
     return;
   }
@@ -55,7 +191,7 @@ async function handleRegister(event) {
     options: {
       data: {
         full_name: fullName,
-        program: program,
+        program_id: programa,
         matricula: matricula || null
       }
     }
