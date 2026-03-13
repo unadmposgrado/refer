@@ -39,6 +39,8 @@ async function initProgramSelects() {
   
   try {
     let niveles = await getNiveles();
+    console.log('Niveles obtenidos de BD (orden alfabético):', niveles);
+    
     // ordenar los niveles en el orden específico requerido por diseño.
     // cualquier valor inesperado se coloca al final en orden alfabético para
     // no romper la lógica existente.
@@ -52,6 +54,8 @@ async function initProgramSelects() {
     // crear arreglo nuevo combinando primero los pedidos y luego el resto
     const restantes = niveles.filter(n => !ordenDeseado.includes(n)).sort((a, b) => a.localeCompare(b));
     niveles = ordenDeseado.filter(n => niveles.includes(n)).concat(restantes);
+    
+    console.log('Niveles reordenados para renderizar:', niveles);
 
     nivelSelect.innerHTML = '<option value="">Selecciona un nivel</option>';
     
@@ -91,7 +95,7 @@ async function handleNivelChange(event) {
     
     if (divisiones.length > 0) {
       // Si existen divisiones, mostrarlas
-      if (divisionContainer) divisionContainer.style.display = 'block';
+      if (divisionContainer) divisionContainer.style.display = 'flex';
       if (divisionSelect) {
         divisionSelect.innerHTML = '<option value="">Selecciona una división</option>';
         divisiones.forEach(division => {

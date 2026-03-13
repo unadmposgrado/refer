@@ -1,6 +1,6 @@
 /* Estilos simples, limpios y responsive */
 :root{
-  --max-width: 800px;
+  --max-width: 1000px;
   --dashboard-max-width: 1400px;
   --gap: 1rem;
   --bg: #ffffff;
@@ -284,6 +284,7 @@ input:focus, textarea:focus, select:focus{
   .form-row label{width:220px;margin-bottom:0}
   .form-row input{flex:1}
   .form-row textarea{flex:1}
+  .form-row select{flex:1}
 }
 
 /* componentes nuevos para dashboard y administración */
