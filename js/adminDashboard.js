@@ -99,13 +99,14 @@ async function renderAdminDashboard() {
 
     const filterHtml = `
       <div id="filters">
-        <label>Modelo:
-          <select id="filter-model"><option value="">Todos</option>
-            ${modelsArray.map(m=>`<option value="${m}">${m}</option>`).join('')}
-          </select>
-        </label>
-        <label>Desde <input type="date" id="filter-from"></label>
-        <label>Hasta <input type="date" id="filter-to"></label>
+        <label for="filter-model">Filtrar por modelo</label>
+        <select id="filter-model"><option value="">Todos</option>
+          ${modelsArray.map(m=>`<option value="${m}">${m}</option>`).join('')}
+        </select>
+        <label for="filter-from">Fecha desde</label>
+        <input type="date" id="filter-from">
+        <label for="filter-to">Fecha hasta</label>
+        <input type="date" id="filter-to">
       </div>
     `;
     tableContainer.innerHTML = filterHtml + '<div id="table-wrapper"></div>';
@@ -393,9 +394,13 @@ async function renderGlobalCitationHistory() {
     const modelOpts = Array.from(models).sort();
 
     const html = `
+      <label for="filter-user">Buscar usuario</label>
       <input id="filter-user" type="text" placeholder="Buscar usuario">
+      <label for="filter-program">Filtrar por programa</label>
       <select id="filter-program"><option value="">Todos</option>${programOpts.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+      <label for="filter-model">Filtrar por modelo</label>
       <select id="filter-model"><option value="">Todos</option>${modelOpts.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+      <label for="filter-date">Filtrar por fecha</label>
       <select id="filter-date">
         <option value="">Todas las fechas</option>
         <option value="7">Últimos 7 días</option>
