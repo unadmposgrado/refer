@@ -38,7 +38,21 @@ async function initProgramSelects() {
   if (!nivelSelect) return;
   
   try {
-    const niveles = await getNiveles();
+    let niveles = await getNiveles();
+    // ordenar los niveles en el orden específico requerido por diseño.
+    // cualquier valor inesperado se coloca al final en orden alfabético para
+    // no romper la lógica existente.
+    const ordenDeseado = [
+      'Licenciatura',
+      'Posgrado',
+      'Técnico superior universitario',
+      'Otro'
+    ];
+
+    // crear arreglo nuevo combinando primero los pedidos y luego el resto
+    const restantes = niveles.filter(n => !ordenDeseado.includes(n)).sort((a, b) => a.localeCompare(b));
+    niveles = ordenDeseado.filter(n => niveles.includes(n)).concat(restantes);
+
     nivelSelect.innerHTML = '<option value="">Selecciona un nivel</option>';
     
     niveles.forEach(nivel => {
