@@ -39,23 +39,45 @@ async function initProgramSelects() {
   
   try {
     let niveles = await getNiveles();
-    console.log('Niveles obtenidos de BD (orden alfabético):', niveles);
     
-    // ordenar los niveles en el orden específico requerido por diseño.
-    // cualquier valor inesperado se coloca al final en orden alfabético para
-    // no romper la lógica existente.
+    // Función para normalizar texto: minúsculas, sin acentos, trim
+    function normalizarTexto(texto) {
+      return texto
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+    
+    // Orden deseado (valores originales para referencia)
     const ordenDeseado = [
-      'Licenciatura',
-      'Posgrado',
-      'Técnico superior universitario',
-      'Otro'
+      "Licenciatura",
+      "Posgrado",
+      "Técnico superior universitario",
+      "Otro"
     ];
-
-    // crear arreglo nuevo combinando primero los pedidos y luego el resto
-    const restantes = niveles.filter(n => !ordenDeseado.includes(n)).sort((a, b) => a.localeCompare(b));
-    niveles = ordenDeseado.filter(n => niveles.includes(n)).concat(restantes);
     
-    console.log('Niveles reordenados para renderizar:', niveles);
+    // Versiones normalizadas para comparación
+    const ordenNormalizado = ordenDeseado.map(n => normalizarTexto(n));
+    
+    // Ordenar niveles usando comparación normalizada, pero manteniendo valores originales
+    niveles.sort((a, b) => {
+      const aNorm = normalizarTexto(a);
+      const bNorm = normalizarTexto(b);
+    
+      const posA = ordenNormalizado.indexOf(aNorm);
+      const posB = ordenNormalizado.indexOf(bNorm);
+    
+      if (posA === -1 && posB === -1) {
+        return a.localeCompare(b); // Si ninguno está en ordenDeseado, orden alfabético
+      }
+      if (posA === -1) return 1; // Los no deseados van al final
+      if (posB === -1) return -1;
+    
+      return posA - posB; // Orden según ordenDeseado
+    });
+    
+    console.log('Niveles ordenados para renderizar:', niveles);
 
     nivelSelect.innerHTML = '<option value="">Selecciona un nivel</option>';
     
