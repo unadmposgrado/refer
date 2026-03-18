@@ -437,6 +437,19 @@ document.addEventListener('DOMContentLoaded', loadModels);
       }
     }
 
+    // Validación extra de Tema obligatorio
+    const temaValue = (data.get('tema') || '').trim();
+    if(!temaValue){
+      if(formError) formError.textContent = 'El campo Tema es obligatorio.';
+      const temaInput = document.getElementById('tema');
+      if(temaInput){
+        temaInput.setCustomValidity('Por favor complete el campo Tema.');
+        temaInput.reportValidity();
+        temaInput.setCustomValidity('');
+      }
+      return;
+    }
+
     const values = {
       organization: (data.get('organization-custom') || '').trim(),
       modelName: finalModelName,
