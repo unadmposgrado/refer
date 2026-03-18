@@ -5,6 +5,50 @@ import { requireAuth, getUserRole } from './auth.js';
 import { supabase } from './supabaseClient.js';
 import { renderMarkdown } from './historial.js';
 
+function getModelColor(modelName, organization) {
+  const name = (modelName || '').toLowerCase();
+  const org = (organization || '').toLowerCase();
+
+  // OpenAI (ChatGPT / GPT)
+  if (org.includes('openai') || name.includes('gpt')) return '#0B8F6C';
+
+  // Google (Gemini)
+  if (org.includes('google') || name.includes('gemini')) return '#4285F4';
+
+  // Anthropic (Claude)
+  if (org.includes('anthropic') || name.includes('claude')) return '#D97706';
+
+  // Microsoft (Copilot)
+  if (org.includes('microsoft') || name.includes('copilot')) return '#2563EB';
+
+  // Meta (Llama)
+  if (org.includes('meta') || name.includes('llama')) return '#3B82F6';
+
+  // Mistral
+  if (org.includes('mistral')) return '#F97316';
+
+  // xAI (Grok)
+  if (org.includes('xai') || name.includes('grok')) return '#111827';
+
+  // Perplexity
+  if (name.includes('perplexity')) return '#22C55E';
+
+  // Cohere
+  if (org.includes('cohere')) return '#FB7185';
+
+  // DeepSeek
+  if (name.includes('deepseek')) return '#14B8A6';
+
+  // Qwen (Alibaba)
+  if (name.includes('qwen')) return '#EAB308';
+
+  // Yi (01.AI)
+  if (name.includes('yi')) return '#EA580C';
+
+  // fallback
+  return '#6B7280';
+}
+
 async function renderAdminDashboard() {
   await requireAuth();
   const role = await getUserRole();
@@ -125,13 +169,14 @@ async function renderAdminDashboard() {
         // profiles ahora incluye el email directamente; full_name se usa como respaldo
         const email = c.profiles?.email || c.profiles?.full_name || '';
         const modelDisplay = c.models?.name || c.model_name_custom || '—';
+        const modelColor = getModelColor(modelDisplay, c.models?.organization);
         const consulta = c.consulta_fecha ? new Date(c.consulta_fecha).toLocaleDateString('es-ES') : '';
         const created = c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : '';
         let text = c.citation_text || '';
         if (text.length > 100) text = text.slice(0, 100) + '…';
         html += `<tr>
           <td>${email}</td>
-          <td>${modelDisplay}</td>
+          <td><span style="color: ${modelColor}; font-weight: 600; transition: color .2s ease;">${modelDisplay}</span></td>
           <td>${consulta}</td>
           <td>${created}</td>
           <td>${text}</td>
@@ -491,6 +536,7 @@ async function renderGlobalCitationHistory() {
       const user = c.profiles?.full_name || c.profiles?.email || '';
       const prog = c.profiles?.programs?.nombre || 'Desconocido';
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
+      const modelColor = getModelColor(m, c.models?.organization);
       let prompt = c.prompt || '';
       if (prompt.length > 50) prompt = prompt.slice(0,50)+'…';
       const modelClass = 'model-' + m.toLowerCase().replace(/\s+/g,'');
@@ -498,7 +544,7 @@ async function renderGlobalCitationHistory() {
         <td>${date}</td>
         <td>${user}</td>
         <td>${prog}</td>
-        <td class="${modelClass}">${m}</td>
+        <td><span style="color: ${modelColor}; font-weight: 600; transition: color .2s ease;">${m}</span></td>
         <td>${c.tema||''}</td>
         <td>${prompt}</td>
         <td><button class="view-citation" data-id="${c.id}">Ver</button></td>
