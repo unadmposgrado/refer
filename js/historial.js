@@ -4,6 +4,20 @@
 import { requireAuth } from './auth.js';
 import { getUserCitations } from './citations.js';
 
+export function renderMarkdown(markdownText) {
+  const texto = markdownText || '';
+  const htmlBruto = (window.marked && typeof marked.parse === 'function') ? marked.parse(texto) : texto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  if (window.DOMPurify && typeof DOMPurify.sanitize === 'function') {
+    return DOMPurify.sanitize(htmlBruto);
+  }
+  return htmlBruto;
+}
+
 async function renderHistorial() {
   // proteger la página y obtener el usuario en el proceso
   let user;
@@ -72,11 +86,13 @@ async function renderHistorial() {
     const modelDisplay = c.models?.name || c.model_name_custom || '—';
 
     card.innerHTML = `
-      <div class="citation-text">${c.citation_text || ''}</div>
+      <div class="citation-text markdown-body">${renderMarkdown(c.citation_text)}</div>
       <div class="citation-extra">
-        <strong>Tema:</strong> ${c.tema || ''} &nbsp;|&nbsp;
-        <strong>Prompt:</strong> ${c.prompt || ''} &nbsp;|&nbsp;
-        <strong>Respuesta:</strong> ${c.llm_response || ''}
+        <strong>Tema:</strong> ${c.tema || ''}
+        <div><strong>Prompt:</strong></div>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
+        <div><strong>Respuesta:</strong></div>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
       </div>
       <div class="citation-meta">
         <span class="meta-item"><strong>Modelo:</strong> ${modelDisplay}</span>

@@ -3,6 +3,7 @@
 
 import { requireAuth, getUserRole } from './auth.js';
 import { supabase } from './supabaseClient.js';
+import { renderMarkdown } from './historial.js';
 
 async function renderAdminDashboard() {
   await requireAuth();
@@ -569,9 +570,12 @@ async function renderGlobalCitationHistory() {
         <p><strong>Programa:</strong> ${c.profiles?.programs?.nombre||'Desconocido'}</p>
         <p><strong>Modelo:</strong> ${c.models?.name||c.model_name_custom||'Desconocido'}</p>
         <p><strong>Tema:</strong> ${c.tema||''}</p>
-        <p><strong>Prompt:</strong> ${c.prompt||''}</p>
-        <p><strong>Respuesta:</strong> ${c.llm_response||''}</p>
-        <p><strong>Referencia APA:</strong> ${c.citation_text||''}</p>
+        <p><strong>Prompt:</strong></p>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
+        <p><strong>Respuesta:</strong></p>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
+        <p><strong>Referencia APA:</strong></p>
+        <div class="markdown-body">${renderMarkdown(c.citation_text)}</div>
         <p><strong>Fecha:</strong> ${c.created_at?new Date(c.created_at).toLocaleString('es-ES', {
           year: 'numeric',
           month: '2-digit',
