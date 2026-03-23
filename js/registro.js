@@ -9,8 +9,29 @@ import { getNiveles, getDivisiones, getProgramas, getProgramasPorNivel } from '.
 
 
 // =============================
-// 🔹 INICIALIZACIÓN
+// 🔹 ACTUALIZAR ESTADO DEL BOTÓN DE REGISTRO
 // =============================
+function updateButtonState() {
+  const privacyCheckbox = document.getElementById('privacyAgree');
+  const registerBtn = document.getElementById('registerSubmitBtn');
+  
+  if (!privacyCheckbox || !registerBtn) return;
+  
+  const isChecked = privacyCheckbox.checked;
+  registerBtn.disabled = !isChecked;
+  
+  if (isChecked) {
+    // Restaurar estilos originales (quitar inline)
+    registerBtn.style.backgroundColor = '';
+    registerBtn.style.color = '';
+    registerBtn.style.cursor = '';
+  } else {
+    // Aplicar estilos deshabilitados
+    registerBtn.style.backgroundColor = '#ccc';
+    registerBtn.style.color = '#666';
+    registerBtn.style.cursor = 'not-allowed';
+  }
+}
 async function initRegister() {
   // sólo manejamos el envío del formulario; la navegación del botón se hace en header.js
   const form = document.getElementById('registerForm');
@@ -26,6 +47,15 @@ async function initRegister() {
     
     if (nivelSelect) nivelSelect.addEventListener('change', handleNivelChange);
     if (divisionSelect) divisionSelect.addEventListener('change', handleDivisionChange);
+    
+    // Inicializar estado del botón de registro
+    updateButtonState();
+    
+    // Agregar listener para el checkbox de privacidad
+    const privacyCheckbox = document.getElementById('privacyAgree');
+    if (privacyCheckbox) {
+      privacyCheckbox.addEventListener('change', updateButtonState);
+    }
   }
 }
 
