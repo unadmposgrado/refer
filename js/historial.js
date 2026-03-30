@@ -18,6 +18,171 @@ export function renderMarkdown(markdownText) {
   return htmlBruto;
 }
 
+let historialData = [];
+let historialDownloadListenerInstalled = false;
+
+function escapeCSV(value) {
+  if (value === null || value === undefined) return '';
+  const text = String(value);
+  const escaped = text.replace(/"/g, '""');
+  const needsQuotes = /[",\n\r]/.test(escaped);
+  return needsQuotes ? `"${escaped}"` : escaped;
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+function exportToCSV(data) {
+  if (!Array.isArray(data)) return;
+
+  const header = ['source_type', 'tema', 'citation_text', 'created_at', 'modelo', 'autor_titulo'];
+  const rows = [header.map(escapeCSV).join(',')];
+
+  data.forEach(c => {
+    const sourceType = c.source_type || '';
+    const tema = c.tema || '';
+    const citationText = c.citation_text || '';
+    const createdAt = c.created_at || '';
+
+    let modelo = '';
+    if (sourceType === 'ia') {
+      modelo = c.models?.name || c.model_name_custom || '';
+    }
+
+    let autorTitulo = '';
+    if (sourceType === 'book') {
+      const meta = c.metadata || {};
+      const autor = meta.autor || '';
+      const titulo = meta.titulo || '';
+      autorTitulo = [autor, titulo].filter(Boolean).join(' / ');
+    }
+
+    rows.push([
+      escapeCSV(sourceType),
+      escapeCSV(tema),
+      escapeCSV(citationText),
+      escapeCSV(createdAt),
+      escapeCSV(modelo),
+      escapeCSV(autorTitulo),
+    ].join(','));
+  });
+
+  const csvContent = rows.join('\r\n');
+  downloadFile(csvContent, 'historial_citas.csv', 'text/csv;charset=utf-8;');
+}
+
+function exportToJSON(data) {
+  if (!Array.isArray(data)) return;
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(json, 'historial_citas.json', 'application/json;charset=utf-8;');
+}
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatDateForPrint(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return escapeHtml(dateStr);
+  }
+}
+
+function exportToHTML(data) {
+  if (!Array.isArray(data)) return;
+
+  const documentTitle = 'Historial de referencias';
+  const userName = (document.getElementById('user-name') || {}).textContent || 'Usuario';
+  const generatedAt = formatDateForPrint(new Date().toISOString());
+
+  const styles = `
+    body { font-family: Georgia, "Times New Roman", serif; line-height: 1.6; margin: 40px; color: #222; background: #fff; }
+    h1 { text-align: center; margin-bottom: 40px; }
+    .metadata { text-align: center; margin-bottom: 30px; color: #555; }
+    .citation { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #ccc; font-style: normal; }
+    .meta { font-size: 0.9em; color: #555; margin-top: 10px; }
+    .label { font-weight: bold; }
+    .block { margin-top: 10px; margin-bottom: 10px; }
+    em { font-style: italic; }
+    strong { font-weight: bold; }
+    a { color: #1a0dab; word-break: break-all; }
+    .reference { font-style: normal; margin-bottom: 12px; }
+    hr.footer { margin-top: 40px; border: 0; border-top: 1px solid #ddd; }
+    p.footer { font-size: 0.8em; color: #777; }
+  `;
+
+  const bodyContent = data.map((c, index) => {
+    const sourceType = c.source_type || 'unknown';
+    const formattedDate = formatDateForPrint(c.created_at);
+    const citationHtml = renderMarkdown(c.citation_text || '');
+
+    if (sourceType === 'book') {
+      const meta = c.metadata || {};
+      return `
+        <div class="citation">
+          <div class="reference">${citationHtml}</div>
+          <div class="block"><span class="label">Autor:</span> ${escapeHtml(meta.autor || '')}</div>
+          <div class="block"><span class="label">Año:</span> ${escapeHtml(meta.anio || '')}</div>
+          <div class="block"><span class="label">Título:</span> <em>${escapeHtml(meta.titulo || '')}</em></div>
+          <div class="block"><span class="label">Editorial:</span> ${escapeHtml(meta.editorial || '')}</div>
+          ${meta.doi_url ? `<div class="block"><span class="label">DOI/URL:</span> <a href="${escapeHtml(meta.doi_url)}" target="_blank">${escapeHtml(meta.doi_url)}</a></div>` : ''}
+          <div class="meta">Fuente: libro | Guardado: ${escapeHtml(formattedDate)}</div>
+        </div>
+      `;
+    }
+
+    const modelDisplay = c.models?.name || c.model_name_custom || '—';
+    const promptHtml = renderMarkdown(c.prompt || '');
+    const responseHtml = renderMarkdown(c.llm_response || '');
+
+    return `
+      <div class="citation">
+        <div class="reference">${citationHtml}</div>
+        <div class="block"><span class="label">Tema:</span> ${escapeHtml(c.tema || '')}</div>
+        <div class="block"><span class="label">Prompt:</span> ${promptHtml}</div>
+        <div class="block"><span class="label">Respuesta:</span> ${responseHtml}</div>
+        <div class="meta">Modelo: <em>${escapeHtml(modelDisplay)}</em> | Guardado: ${escapeHtml(formattedDate)}</div>
+      </div>
+    `;
+  }).join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <title>${escapeHtml(documentTitle)}</title>
+    <style>${styles}</style>
+  </head>
+  <body>
+    <h1>${escapeHtml(documentTitle)}</h1>
+    <div class="metadata">Usuario: ${escapeHtml(userName)} | Fecha de generación: ${escapeHtml(generatedAt)}</div>
+    ${bodyContent}
+    <hr class="footer" />
+    <p class="footer">Documento generado automáticamente por la aplicación de citación.</p>
+  </body>
+</html>`;
+
+  downloadFile(html, 'historial_citas.html', 'text/html;charset=utf-8;');
+}
+
 async function renderHistorial() {
   // proteger la página y obtener el usuario en el proceso
   let user;
@@ -59,6 +224,24 @@ async function renderHistorial() {
   }
 
   console.debug('[historial] citas obtenidas:', data && data.length);
+
+  historialData = Array.isArray(data) ? data : [];
+
+  if (!historialDownloadListenerInstalled) {
+    const downloadBtn = document.getElementById('download-history-btn');
+    const formatSelect = document.getElementById('download-format');
+
+    if (downloadBtn && formatSelect) {
+      downloadBtn.addEventListener('click', () => {
+        const format = formatSelect.value;
+        // CSV y JSON deshabilitados temporalmente (mantener funciones para futura activación)
+        if (format === 'html') {
+          exportToHTML(historialData);
+        }
+      });
+      historialDownloadListenerInstalled = true;
+    }
+  }
 
   if (!data || data.length === 0) {
     container.textContent = 'Aún no tienes referencias guardadas.';

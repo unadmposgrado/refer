@@ -15,6 +15,16 @@
       <h2>Mi historial</h2>
       <p id="user-name" class="user-name"></p>
       <p>Estas son tus referencias anteriores:</p>
+      <!-- Botón de descarga de historial -->
+      <div class="download-history-controls" style="margin: 1rem 0; display: flex; gap: 0.5rem; align-items: center;">
+        <button id="download-history-btn" type="button">Descargar historial</button>
+        <label for="download-format" style="display: flex; align-items: center; gap: 0.25rem;">
+          Formato:
+          <select id="download-format">
+            <option value="html">Versión imprimible</option>
+          </select>
+        </label>
+      </div>
       <!-- dashboard métricas para el usuario -->
       <div id="user-dashboard"></div>
       <div id="historial-list"></div>
