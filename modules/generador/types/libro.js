@@ -1,3 +1,5 @@
+import { saveCitation } from '../../../js/citations.js';
+
 export function initLibro(container) {
   if (!container) return;
 
@@ -62,7 +64,7 @@ export function initLibro(container) {
     return pieces.join(' ');
   }
 
-  form.addEventListener('submit', function (event) {
+  form.addEventListener('submit', async function (event) {
     event.preventDefault();
     if (formError) formError.textContent = '';
 
@@ -87,6 +89,28 @@ export function initLibro(container) {
       referenceEl.innerHTML = '';
       referenceEl.innerHTML = apa;
       referenceEl.focus();
+    }
+
+    const citationData = {
+      source_type: 'book',
+      citation_text: apa,
+      metadata: {
+        autor,
+        anio,
+        titulo,
+        editorial,
+        doi_url: doi_url || null
+      },
+      consulta_fecha: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const { error } = await saveCitation(citationData);
+      if (error) {
+        console.error('Error guardando cita libro:', error);
+      }
+    } catch (err) {
+      console.error('Error inesperado:', err);
     }
   });
 

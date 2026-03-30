@@ -28,7 +28,9 @@ export async function saveCitation(data) {
     tema: data.tema || null,
     prompt: data.prompt || null,
     llm_response: data.llm_response || null,
-    citation_text: data.citation_text || null
+    citation_text: data.citation_text || null,
+    source_type: data.source_type || 'ia',
+    metadata: data.metadata || null
   };
 
   const { data: inserted, error } = await supabase
