@@ -77,15 +77,10 @@ async function renderHistorial() {
   }
 
 
-  // Para cada cita construir tarjeta
-  data.forEach(c => {
-    const card = document.createElement('article');
-    card.className = 'citation-card';
-
-    // model display: prefer relación ya cargada, luego nombre personalizado
+  // Extraemos render de IA para no tocar la lógica actual y soportar nuevos tipos.
+  function renderIACitation(c) {
     const modelDisplay = c.models?.name || c.model_name_custom || '—';
-
-    card.innerHTML = `
+    return `
       <div class="citation-text markdown-body">${renderMarkdown(c.citation_text)}</div>
       <div class="citation-extra">
         <strong>Tema:</strong> ${c.tema || ''}
@@ -99,9 +94,43 @@ async function renderHistorial() {
         <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
       </div>
     `;
+  }
 
-    container.appendChild(card);
-  });
+  function renderBookCitation(c) {
+    const meta = c.metadata || {};
+    return `
+      <div class="history-item">
+        <div class="history-header">
+          <strong>📘 Libro</strong>
+        </div>
+
+        <div class="history-body">
+          <p><strong>Autor:</strong> ${meta.autor || ''}</p>
+          <p><strong>Año:</strong> ${meta.anio || ''}</p>
+          <p><strong>Título:</strong> ${meta.titulo || ''}</p>
+          <p><strong>Editorial:</strong> ${meta.editorial || ''}</p>
+          ${meta.doi_url ? `<p><strong>DOI/URL:</strong> ${meta.doi_url}</p>` : ''}
+        </div>
+
+        <div class="history-reference">
+          ${renderMarkdown(c.citation_text)}
+        </div>
+      </div>
+      <div class="citation-meta">
+        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
+      </div>
+    `;
+  }
+
+  // Para cada cita construir tarjeta según source_type (ia/book)
+  container.innerHTML = data.map(c => {
+    console.log('CITATION TYPE:', c.source_type);
+
+    if (c.source_type === 'book') {
+      return `<article class="citation-card">${renderBookCitation(c)}</article>`;
+    }
+    return `<article class="citation-card">${renderIACitation(c)}</article>`;
+  }).join('');
 }
 
 // el render se controla desde dashboard.js para poder refrescarlo al cambiar de pestaña
