@@ -52,6 +52,16 @@
               <li>También puedes elegir el modelo de una lista o seleccionar "Otro modelo" para escribir el nombre manualmente.</li>
             </ul>
       
+      <div class="form-row">
+        <label for="sourceTypeSelect">Tipo de referencia</label>
+        <select id="sourceTypeSelect">
+          <option value="ia">Inteligencia Artificial</option>
+          <option value="book">Libro</option>
+          <option value="article">Artículo</option>
+        </select>
+      </div>
+
+      <div id="generatorContainer">
       <form id="refForm" class="form" novalidate>
         <fieldset>
           <legend>Información del modelo</legend>
@@ -109,6 +119,7 @@
           <button type="submit" class="btn-primary">Generar referencia</button>
         </div>
       </form>
+      </div>
 
       <noscript>
         <p class="notice">Para generar y copiar la referencia necesita habilitar JavaScript en su navegador.</p>
@@ -134,7 +145,7 @@
 
   <!-- Supabase se carga desde módulos; el cliente está en js/supabaseClient.js -->
   <script type="module" src="js/header.js"></script>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="modules/generador/generador.js"></script>
   <script type="module">
     import { requireAuth, getUser } from './js/auth.js';
     
