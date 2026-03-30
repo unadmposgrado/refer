@@ -1,4 +1,5 @@
 import { initIA } from './types/ia.js';
+import { initLibro } from './types/libro.js';
 
 const container = document.getElementById('generatorContainer');
 const selector = document.getElementById('sourceTypeSelect');
@@ -9,6 +10,9 @@ function loadType(type) {
   container.innerHTML = '';
 
   switch(type) {
+    case 'book':
+      initLibro(container);
+      break;
     case 'ia':
     default:
       container.innerHTML = formTemplate;
