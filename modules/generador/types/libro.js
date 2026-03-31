@@ -57,21 +57,80 @@ export function initLibro(container) {
   const copyBtn = document.getElementById('copyBtn');
   const authorPreview = container.querySelector('#authorPreview');
 
+  function extractApellidoAPA(apellido) {
+    const apellidoTrim = String(apellido || '').trim();
+    if (!apellidoTrim) return '';
+
+    const cleaned = apellidoTrim.toLowerCase().replace(/\s+/g, ' ');
+    const parts = apellidoTrim.split(/\s+/).filter(Boolean);
+
+    const compuestos = ['de la', 'de los', 'de las', 'van der'];
+    for (const comp of compuestos) {
+      if (cleaned.startsWith(comp + ' ')) {
+        const compParts = comp.split(' ').length + 1;
+        if (parts.length >= compParts) {
+          return parts.slice(0, compParts).join(' ');
+        }
+      }
+      if (cleaned === comp) {
+        return parts.join(' ');
+      }
+    }
+
+    const simples = ['de', 'del', 'van', 'von', 'da', 'dos', 'das'];
+    if (parts.length > 1 && simples.includes(parts[0].toLowerCase())) {
+      return parts.slice(0, 2).join(' ');
+    }
+
+    return parts[0];
+  }
+
+  function capitalizeWord(word) {
+    if (!word) return '';
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }
+
+  function formatIniciales(nombre) {
+    return String(nombre || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((n) => (capitalizeWord(n)[0] || '').toUpperCase() + '.')
+      .join(' ');
+  }
+
+  function capitalizeApellido(apellido) {
+    const lowerConnectors = ['de', 'del', 'la', 'las', 'los', 'van', 'von', 'der', 'da', 'dos', 'das'];
+
+    return String(apellido || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word, index) => {
+        const lower = word.toLowerCase();
+        if (lowerConnectors.includes(lower) && index !== 0) {
+          return lower;
+        }
+        return capitalizeWord(word);
+      })
+      .join(' ');
+  }
+
   function formatAuthorAPA(nombre, apellido) {
     const nombreTrim = String(nombre || '').trim();
     const apellidoTrim = String(apellido || '').trim();
 
     if (!nombreTrim || !apellidoTrim) return '';
 
-    const nombreParts = nombreTrim.split(/\s+/).filter(Boolean);
-    const iniciales = nombreParts
-      .map((parte) => `${parte.charAt(0).toUpperCase()}.`)
-      .join(' ');
+    const iniciales = formatIniciales(nombreTrim);
+    if (!iniciales) return '';
 
-    const primerApellido = apellidoTrim.split(/\s+/).filter(Boolean)[0] || '';
-    if (!primerApellido) return '';
+    const apellidoAPA = extractApellidoAPA(apellidoTrim);
+    if (!apellidoAPA) return '';
 
-    return `${primerApellido}, ${iniciales}`;
+    const apellidoCapitalizado = capitalizeApellido(apellidoAPA);
+
+    return `${apellidoCapitalizado}, ${iniciales}`;
   }
 
   function formatMultipleAuthorsAPA(autores) {
