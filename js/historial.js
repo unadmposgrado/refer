@@ -305,13 +305,79 @@ async function renderHistorial() {
     `;
   }
 
-  // Para cada cita construir tarjeta según source_type (ia/book)
+  function renderArticleCitation(c) {
+    const meta = c.metadata || {};
+    return `
+      <div class="history-item">
+        <div class="history-header">
+          <strong>📄 Artículo</strong>
+        </div>
+
+        <div class="history-body">
+          <p><strong>Autor:</strong> ${meta.autor || ''}</p>
+          <p><strong>Año:</strong> ${meta.anio || ''}</p>
+          <p><strong>Título:</strong> ${meta.titulo || ''}</p>
+          <p><strong>Revista:</strong> ${meta.revista || ''}</p>
+          <p><strong>Volumen:</strong> ${meta.volumen || ''}</p>
+          <p><strong>Número:</strong> ${meta.numero || ''}</p>
+          <p><strong>Páginas:</strong> ${meta.paginas || ''}</p>
+          ${meta.doi_url ? `<p><strong>DOI/URL:</strong> ${meta.doi_url}</p>` : ''}
+        </div>
+
+        <div class="history-reference">
+          ${renderMarkdown(c.citation_text)}
+        </div>
+      </div>
+      <div class="citation-meta">
+        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
+      </div>
+    `;
+  }
+
+  function renderWebCitation(c) {
+    const meta = c.metadata || {};
+    const url = (meta.url || '').trim();
+    return `
+      <div class="history-item">
+        <div class="history-header">
+          <strong>🌐 Sitio web</strong>
+        </div>
+
+        <div class="history-body">
+          <p><strong>Autor:</strong> ${meta.autor || ''}</p>
+          <p><strong>Fecha:</strong> ${meta.fecha || ''}</p>
+          <p><strong>Título:</strong> ${meta.titulo || ''}</p>
+          <p><strong>Sitio:</strong> ${meta.sitio || ''}</p>
+          ${url ? `<p><strong>URL:</strong> <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></p>` : ''}
+        </div>
+
+        <div class="history-reference">
+          ${renderMarkdown(c.citation_text)}
+        </div>
+      </div>
+      <div class="citation-meta">
+        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
+      </div>
+    `;
+  }
+
+  // Para cada cita construir tarjeta según source_type (ia/book/article/web)
   container.innerHTML = data.map(c => {
     console.log('CITATION TYPE:', c.source_type);
 
+    if (c.source_type === 'ia') {
+      return `<article class="citation-card">${renderIACitation(c)}</article>`;
+    }
     if (c.source_type === 'book') {
       return `<article class="citation-card">${renderBookCitation(c)}</article>`;
     }
+    if (c.source_type === 'article') {
+      return `<article class="citation-card">${renderArticleCitation(c)}</article>`;
+    }
+    if (c.source_type === 'web') {
+      return `<article class="citation-card">${renderWebCitation(c)}</article>`;
+    }
+
     return `<article class="citation-card">${renderIACitation(c)}</article>`;
   }).join('');
 }
