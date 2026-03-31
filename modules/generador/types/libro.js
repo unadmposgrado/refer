@@ -9,13 +9,9 @@ export function initLibro(container) {
         <legend>Información del libro</legend>
 
         <div class="form-row">
-          <label for="nombre">Nombre <span class="required">*</span></label>
-          <input type="text" id="nombre" name="nombre" required placeholder="Ej. Juan Luis">
-        </div>
-
-        <div class="form-row">
-          <label for="apellido">Apellido <span class="required">*</span></label>
-          <input type="text" id="apellido" name="apellido" required placeholder="Ej. Hidalgo">
+          <label>Autores <span class="required">*</span></label>
+          <div id="authorsContainer" aria-live="polite"></div>
+          <button type="button" id="addAuthorBtn" class="btn-secondary" style="margin-top: 0.5rem;">Agregar autor</button>
         </div>
 
         <div class="form-row">
@@ -56,6 +52,9 @@ export function initLibro(container) {
   const referenceEl = document.getElementById('reference');
   const copyBtn = document.getElementById('copyBtn');
   const authorPreview = container.querySelector('#authorPreview');
+  const authorsContainer = container.querySelector('#authorsContainer');
+  const addAuthorBtn = container.querySelector('#addAuthorBtn');
+  let authorIndex = 0;
 
   function extractApellidoAPA(apellido) {
     const apellidoTrim = String(apellido || '').trim();
@@ -148,15 +147,111 @@ export function initLibro(container) {
     return `${autoresFormateados.join(', ')}, & ${ultimo}`;
   }
 
-  function buildBookAPA({ nombre, apellido, anio, titulo, editorial, doi_url }) {
-    const autorFormateado = formatAuthorAPA(nombre, apellido);
+  function formatAuthorsReference(autores) {
+    if (!Array.isArray(autores) || autores.length === 0) return '';
+
+    const autoresFormateados = autores
+      .map((autor) => formatAuthorAPA(autor.nombre, autor.apellido))
+      .filter(Boolean);
+
+    if (autoresFormateados.length === 0) return '';
+    if (autoresFormateados.length === 1) return autoresFormateados[0];
+    if (autoresFormateados.length === 2) return `${autoresFormateados[0]} & ${autoresFormateados[1]}`;
+
+    const ultimo = autoresFormateados.pop();
+    return `${autoresFormateados.join(', ')}, & ${ultimo}`;
+  }
+
+  function formatInTextCitation(autores, anio) {
+    if (!Array.isArray(autores) || autores.length === 0) return '';
+
+    const apellidos = autores
+      .map((autor) => {
+        const apellidoExtraido = extractApellidoAPA(autor.apellido);
+        return capitalizeApellido(apellidoExtraido);
+      })
+      .filter(Boolean);
+
+    if (apellidos.length === 0) return '';
+
+    const anioTexto = String(anio || '').trim();
+    if (!anioTexto) return '';
+
+    if (apellidos.length === 1) {
+      return `${apellidos[0]}, ${anioTexto}`;
+    }
+
+    if (apellidos.length === 2) {
+      return `${apellidos[0]} y ${apellidos[1]}, ${anioTexto}`;
+    }
+
+    return `${apellidos[0]} et al., ${anioTexto}`;
+  }
+
+  function createAuthorField(index) {
+    const authorGroup = document.createElement('div');
+    authorGroup.className = 'author-group';
+    authorGroup.dataset.index = index;
+
+    authorGroup.innerHTML = `
+      <div class="form-row" style="display:flex;gap:0.5rem;align-items:flex-end;">
+        <div style="flex:1;">
+          <label for="author-name-${index}">Nombre <span class="required">*</span></label>
+          <input type="text" id="author-name-${index}" name="author-name-${index}" class="author-name" required placeholder="Ej. Juan Luis">
+        </div>
+        <div style="flex:1;">
+          <label for="author-last-${index}">Apellido <span class="required">*</span></label>
+          <input type="text" id="author-last-${index}" name="author-last-${index}" class="author-last" required placeholder="Ej. Hidalgo">
+        </div>
+        ${index > 0 ? '<button type="button" class="remove-author-btn" aria-label="Eliminar autor" style="align-self:flex-end;">Eliminar autor</button>' : ''}
+      </div>
+    `;
+
+    return authorGroup;
+  }
+
+  function getAuthorsData() {
+    const groups = Array.from(authorsContainer.querySelectorAll('.author-group'));
+    const autores = [];
+
+    for (const group of groups) {
+      const nombreEl = group.querySelector('.author-name');
+      const apellidoEl = group.querySelector('.author-last');
+      const nombre = nombreEl ? String(nombreEl.value || '').trim() : '';
+      const apellido = apellidoEl ? String(apellidoEl.value || '').trim() : '';
+
+      if (!nombre || !apellido) {
+        return null;
+      }
+
+      autores.push({ nombre, apellido });
+    }
+
+    return autores;
+  }
+
+  function updateAuthorPreview() {
+    if (!authorPreview) return;
+    const autores = getAuthorsData();
+    if (!autores || autores.length === 0) {
+      authorPreview.textContent = '-';
+      return;
+    }
+
+    const first = autores[0];
+    const formatted = formatAuthorAPA(first.nombre, first.apellido);
+    authorPreview.textContent = formatted || '-';
+  }
+
+  function buildBookAPA({ autores, anio, titulo, editorial, doi_url }) {
+    const autoresFormateados = formatAuthorsReference(autores);
     const anioSafe = String(anio || '').trim();
     const tituloSafe = String(titulo || '').trim();
     const editorialSafe = String(editorial || '').trim();
     const doiUrlSafe = String(doi_url || '').trim();
 
     const pieces = [];
-    pieces.push(`${autorFormateado} (${anioSafe}).`);
+    pieces.push(`${autoresFormateados} (${anioSafe}).`);
     pieces.push(`<em>${tituloSafe}</em>.`);
     pieces.push(`${editorialSafe}.`);
     if (doiUrlSafe) {
@@ -169,15 +264,46 @@ export function initLibro(container) {
   function updateAuthorPreview() {
     if (!authorPreview) return;
 
-    const nombre = container.querySelector('#nombre').value.trim();
-    const apellido = container.querySelector('#apellido').value.trim();
-    const formatted = formatAuthorAPA(nombre, apellido);
+    const autores = getAuthorsData();
+    if (!autores || autores.length === 0) {
+      authorPreview.textContent = '-';
+      return;
+    }
 
+    const first = autores[0];
+    const formatted = formatAuthorAPA(first.nombre, first.apellido);
     authorPreview.textContent = formatted || '-';
   }
 
-  container.querySelector('#nombre').addEventListener('input', updateAuthorPreview);
-  container.querySelector('#apellido').addEventListener('input', updateAuthorPreview);
+  // Event delegation para actualizar vista previa de autor al editar cualquiera de los campos
+  authorsContainer.addEventListener('input', function (event) {
+    if (event.target.matches('.author-name') || event.target.matches('.author-last')) {
+      updateAuthorPreview();
+    }
+  });
+
+  // Botón para agregar nuevos autores
+  addAuthorBtn.addEventListener('click', function () {
+    authorIndex += 1;
+    authorsContainer.appendChild(createAuthorField(authorIndex));
+    updateAuthorPreview();
+  });
+
+  // Eliminación dinámica de autores
+  authorsContainer.addEventListener('click', function (event) {
+    if (event.target.matches('.remove-author-btn')) {
+      const group = event.target.closest('.author-group');
+      if (group) {
+        group.remove();
+        updateAuthorPreview();
+      }
+    }
+  });
+
+  // Inicializa un autor por defecto
+  authorIndex = 0;
+  authorsContainer.appendChild(createAuthorField(authorIndex));
+  updateAuthorPreview();
 
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
@@ -188,32 +314,32 @@ export function initLibro(container) {
       return;
     }
 
-    const nombre = container.querySelector('#nombre').value.trim();
-    const apellido = container.querySelector('#apellido').value.trim();
+    const autores = getAuthorsData();
     const anio = container.querySelector('#anio').value.trim();
     const titulo = container.querySelector('#titulo').value.trim();
     const editorial = container.querySelector('#editorial').value.trim();
     const doi_url = container.querySelector('#doi_url').value.trim();
 
-    if (!nombre || !apellido || !anio || !titulo || !editorial) {
+    if (!autores || autores.length === 0 || !anio || !titulo || !editorial) {
       if (formError) formError.textContent = 'Todos los campos obligatorios deben completarse.';
       return;
     }
 
-    const apa = buildBookAPA({ nombre, apellido, anio, titulo, editorial, doi_url });
+    const apa = buildBookAPA({ autores, anio, titulo, editorial, doi_url });
     if (referenceEl) {
       referenceEl.innerHTML = '';
       referenceEl.innerHTML = apa;
       referenceEl.focus();
     }
 
+    const inTextCitation = formatInTextCitation(autores, anio);
+
     const citationData = {
       source_type: 'book',
       citation_text: apa,
       metadata: {
-        autores: [
-          { nombre, apellido }
-        ],
+        autores,
+        in_text_citation: inTextCitation,
         anio,
         titulo,
         editorial,

@@ -371,6 +371,7 @@ async function renderGlobalCitationHistory() {
       .select(`
         id,
         created_at,
+        source_type,
         tema,
         prompt,
         citation_text,
@@ -523,7 +524,7 @@ async function renderGlobalCitationHistory() {
       containerTbl.innerHTML = '<p>No hay registros.</p>';
       return;
     }
-    let html = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Programa</th><th>Modelo</th><th>Tema</th><th>Prompt</th><th>Detalle</th></tr></thead><tbody>';
+    let html = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Programa</th><th>Tipo</th><th>Modelo</th><th>Detalle</th></tr></thead><tbody>';
     pageItems.forEach(c => {
       // format fecha+hora sin segundos para el historial global
       const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES', {
@@ -535,19 +536,39 @@ async function renderGlobalCitationHistory() {
       }) : '';
       const user = c.profiles?.full_name || c.profiles?.email || '';
       const prog = c.profiles?.programs?.nombre || 'Desconocido';
-      const m = c.models?.name || c.model_name_custom || 'Desconocido';
-      const modelColor = getModelColor(m, c.models?.organization);
-      let prompt = c.prompt || '';
-      if (prompt.length > 50) prompt = prompt.slice(0,50)+'…';
-      const modelClass = 'model-' + m.toLowerCase().replace(/\s+/g,'');
+
+      const rawType = (c.source_type || '').toLowerCase();
+
+      const typeMap = {
+        ia: 'IA',
+        book: 'Libro',
+        article: 'Artículo',
+        web: 'Web'
+      };
+      const tipo = typeMap[rawType] || rawType || 'Desconocido';
+
+      let m = 'N/A';
+      if (rawType === 'ia') {
+        m = c.models?.name || c.model_name_custom || 'Desconocido';
+      }
+
+      const modelColor = rawType === 'ia'
+        ? getModelColor(m, c.models?.organization)
+        : 'inherit';
+
       html += `<tr>
         <td>${date}</td>
         <td>${user}</td>
         <td>${prog}</td>
-        <td><span style="color: ${modelColor}; font-weight: 600; transition: color .2s ease;">${m}</span></td>
-        <td>${c.tema||''}</td>
-        <td>${prompt}</td>
-        <td><button class="view-citation" data-id="${c.id}">Ver</button></td>
+        <td>${tipo}</td>
+        <td>
+          <span style="color: ${modelColor}; font-weight: 600;">
+            ${m}
+          </span>
+        </td>
+        <td>
+          <button class="view-citation" data-id="${c.id}">Ver</button>
+        </td>
       </tr>`;
     });
     html += '</tbody></table>';
