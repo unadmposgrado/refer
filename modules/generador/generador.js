@@ -1,5 +1,7 @@
 import { initIA } from './types/ia.js';
 import { initLibro } from './types/libro.js';
+import { initArticulo } from './types/articulo.js';
+import { initWeb } from './types/web.js';
 
 const container = document.getElementById('generatorContainer');
 const selector = document.getElementById('sourceTypeSelect');
@@ -12,6 +14,12 @@ function loadType(type) {
   switch(type) {
     case 'book':
       initLibro(container);
+      break;
+    case 'article':
+      initArticulo(container);
+      break;
+    case 'web':
+      initWeb(container);
       break;
     case 'ia':
     default:
