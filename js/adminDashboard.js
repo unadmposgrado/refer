@@ -432,10 +432,25 @@ async function renderGlobalCitationHistory() {
     // programas y modelos únicos para opciones
     const programs = new Set();
     const models = new Set();
+
+    const typeMap = {
+      ia: 'IA',
+      book: 'Libro',
+      article: 'Artículo',
+      web: 'Web'
+    };
+
     citations.forEach(c => {
       if (c.profiles?.programs?.nombre) programs.add(c.profiles.programs.nombre);
-      const m = c.models?.name || c.model_name_custom || 'Desconocido';
-      models.add(m);
+      const rawType = (c.source_type || '').toLowerCase();
+
+      if (rawType === 'ia') {
+        const m = c.models?.name || c.model_name_custom || 'Desconocido';
+        models.add(m);
+      } else {
+        const tipo = typeMap[rawType] || rawType || 'Otro';
+        models.add(tipo);
+      }
     });
     const programOpts = Array.from(programs).sort();
     const modelOpts = Array.from(models).sort();
@@ -480,8 +495,22 @@ async function renderGlobalCitationHistory() {
       }
       // programa
       if (progVal && c.profiles?.programs?.nombre !== progVal) return false;
-      // modelo
-      const m = c.models?.name || c.model_name_custom || 'Desconocido';
+        // modelo
+      const rawType = (c.source_type || '').toLowerCase();
+
+      let m = '';
+      if (rawType === 'ia') {
+        m = c.models?.name || c.model_name_custom || 'Desconocido';
+      } else {
+        const typeMap = {
+          ia: 'IA',
+          book: 'Libro',
+          article: 'Artículo',
+          web: 'Web'
+        };
+        m = typeMap[rawType] || rawType || 'Otro';
+      }
+
       if (modelVal && m !== modelVal) return false;
       // fecha
       if (dateVal) {
