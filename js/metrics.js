@@ -50,10 +50,10 @@ export async function renderMetrics() {
       </div>
     </div>
 
-    <!-- módulo historial global de uso de IA -->
+    <!-- módulo historial global -->
     <div class="admin-module">
       <div class="admin-module-header">
-        <h2>Historial global de uso de IA</h2>
+        <h2>Historial global</h2>
         <button id="export-csv" class="btn-secondary" style="margin-left:1rem;">Descargar CSV</button>
       </div>
       <div class="admin-module-body">
