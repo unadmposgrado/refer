@@ -84,9 +84,6 @@ document.addEventListener('DOMContentLoaded', loadModels);
 // ------------------------------------------------------
 // Código existente de la aplicación (formulario, catálogo, etc.)
 // ------------------------------------------------------
-// ------------------------------------------------------
-// Código existente de la aplicación (formulario, catálogo, etc.)
-// ------------------------------------------------------
 
 (function(){
   const form = document.getElementById('refForm');
@@ -155,14 +152,6 @@ document.addEventListener('DOMContentLoaded', loadModels);
 
   // Gestionar cambios en la selección del modelo
   if(modelSelect){
-    /*
-      Cuando el usuario elige un modelo del <select> principal los datos
-      de `organization_responsible` y `model_url` se obtienen directamente
-      desde la tabla `models` de Supabase. Se conservan los casos de
-      placeholder y "otro" como estaban antes. Se añaden logs para
-      depuración y se transforman valores vacíos a cadenas vacías que más
-      tarde se convierten a `null` en saveCitation().
-    */
     modelSelect.addEventListener('change', async function(){
       const v = this.value;
       console.debug('Cambio de modelo seleccionado:', v);
