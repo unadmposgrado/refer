@@ -361,12 +361,21 @@ async function renderGlobalCitationHistory() {
   // filtros sobre los datos cargados en la página.
   let filtered = [];
 
+  // objeto global de estado de filtros
+  const filters = {
+    user: '',
+    program: '',
+    model: '',
+    dateRange: ''
+  };
+
   // helper que solicita una página al servidor y actualiza el estado local
   async function loadPage() {
     const from = (currentPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error, count } = await supabase
+    // construir query base
+    let query = supabase
       .from('citations')
       .select(`
         id,
@@ -382,8 +391,46 @@ async function renderGlobalCitationHistory() {
         models(name),
         profiles(full_name,email,programs(nombre, nivel, division))
       `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(from, to);
+      .order('created_at', { ascending: false });
+
+    // aplicar filtros dinámicos
+    // A) Filtro de usuario
+    if (filters.user) {
+      query = query.or(`profiles.full_name.ilike.%${filters.user}%,profiles.email.ilike.%${filters.user}%`);
+    }
+    // B) Filtro de programa
+    if (filters.program) {
+      query = query.eq('profiles.programs.nombre', filters.program);
+    }
+    // C) Filtro de modelo
+    if (filters.model) {
+      const typeMapReverse = {
+        'IA': 'ia',
+        'Libro': 'book',
+        'Artículo': 'article',
+        'Web': 'web'
+      };
+      const sourceType = typeMapReverse[filters.model];
+      if (sourceType === 'ia') {
+        query = query.or(`models.name.ilike.%${filters.model}%,model_name_custom.ilike.%${filters.model}%`);
+      } else if (sourceType) {
+        query = query.eq('source_type', sourceType);
+      } else {
+        // asumir es modelo de ia
+        query = query.or(`models.name.ilike.%${filters.model}%,model_name_custom.ilike.%${filters.model}%`);
+      }
+    }
+    // D) Filtro de fecha
+    if (filters.dateRange) {
+      const days = parseInt(filters.dateRange);
+      const threshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      query = query.gte('created_at', threshold.toISOString());
+    }
+
+    // aplicar paginación
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error('Error fetching global citation history:', error);
@@ -473,60 +520,34 @@ async function renderGlobalCitationHistory() {
     const filt = document.getElementById('history-filters');
     if (filt) filt.innerHTML = html;
 
-    // añadir listeners
+    // añadir listeners con debounce para user
+    let debounceTimer;
     ['filter-user','filter-program','filter-model','filter-date'].forEach(id=>{
       const el = document.getElementById(id);
-      if (el) el.addEventListener('input', applyFilters);
+      if (el) {
+        if (id === 'filter-user') {
+          el.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+              filters.user = el.value.toLowerCase();
+              currentPage = 1;
+              loadPage();
+            }, 300);
+          });
+        } else {
+          el.addEventListener('change', () => {
+            if (id === 'filter-program') filters.program = el.value;
+            else if (id === 'filter-model') filters.model = el.value;
+            else if (id === 'filter-date') filters.dateRange = el.value;
+            currentPage = 1;
+            loadPage();
+          });
+        }
+      }
     });
   }
 
-  function applyFilters() {
-    const userVal = document.getElementById('filter-user')?.value.toLowerCase() || '';
-    const progVal = document.getElementById('filter-program')?.value || '';
-    const modelVal = document.getElementById('filter-model')?.value || '';
-    const dateVal = document.getElementById('filter-date')?.value || '';
 
-    filtered = citations.filter(c => {
-      // usuario
-      const name = (c.profiles?.full_name||'').toLowerCase();
-      const email = (c.profiles?.email||'').toLowerCase();
-      if (userVal) {
-        if (!name.includes(userVal) && !email.includes(userVal)) return false;
-      }
-      // programa
-      if (progVal && c.profiles?.programs?.nombre !== progVal) return false;
-        // modelo
-      const rawType = (c.source_type || '').toLowerCase();
-
-      let m = '';
-      if (rawType === 'ia') {
-        m = c.models?.name || c.model_name_custom || 'Desconocido';
-      } else {
-        const typeMap = {
-          ia: 'IA',
-          book: 'Libro',
-          article: 'Artículo',
-          web: 'Web'
-        };
-        m = typeMap[rawType] || rawType || 'Otro';
-      }
-
-      if (modelVal && m !== modelVal) return false;
-      // fecha
-      if (dateVal) {
-        const now = new Date();
-        const threshold = new Date(now.getTime() - Number(dateVal)*24*60*60*1000);
-        const cDate = c.created_at ? new Date(c.created_at) : null;
-        if (!cDate || cDate < threshold) return false;
-      }
-      return true;
-    });
-
-    currentPage = 1;
-    renderSummary();
-    renderTablePage();
-    renderPagination();
-  }
 
   // render de resumen (resume sobre los datos actualmente filtrados/paginados)
   function renderSummary() {
@@ -535,7 +556,7 @@ async function renderGlobalCitationHistory() {
     if (!scont) return;
     scont.innerHTML = `
       <div class="dashboard-cards">
-        <div class="card"><strong>Total citas:</strong> ${sum.total}</div>
+        <div class="card"><strong>Total citas:</strong> ${totalRows}</div>
         <div class="card"><strong>Usuarios activos:</strong> ${sum.uniqueUsers}</div>
         <div class="card"><strong>Modelo más usado:</strong> ${sum.mostUsedModel}</div>
         <div class="card"><strong>Programa más activo:</strong> ${sum.topProgram}</div>
@@ -547,8 +568,7 @@ async function renderGlobalCitationHistory() {
   function renderTablePage() {
     const containerTbl = document.getElementById('history-table-container');
     if (!containerTbl) return;
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageItems = filtered.slice(start, start + PAGE_SIZE);
+    const pageItems = filtered;
     if (pageItems.length === 0) {
       containerTbl.innerHTML = '<p>No hay registros.</p>';
       return;
@@ -617,14 +637,7 @@ async function renderGlobalCitationHistory() {
   function renderPagination() {
     const pag = document.getElementById('history-pagination');
     if (!pag) return;
-    // determinar si hay filtros activos
-    const userVal = document.getElementById('filter-user')?.value || '';
-    const progVal = document.getElementById('filter-program')?.value || '';
-    const modelVal = document.getElementById('filter-model')?.value || '';
-    const dateVal = document.getElementById('filter-date')?.value || '';
-    const filtersActive = userVal || progVal || modelVal || dateVal;
-
-    const totalPages = Math.max(1, Math.ceil((filtersActive ? filtered.length : totalRows) / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
     pag.innerHTML = `
       <button id="prev-page" ${currentPage===1?'disabled':''}>Anterior</button>
       <span>Página ${currentPage} de ${totalPages}</span>
@@ -633,23 +646,13 @@ async function renderGlobalCitationHistory() {
     document.getElementById('prev-page')?.addEventListener('click', () => {
       if (currentPage>1) {
         currentPage--;
-        if (filtersActive) {
-          renderTablePage();
-          renderPagination();
-        } else {
-          loadPage();
-        }
+        loadPage();
       }
     });
     document.getElementById('next-page')?.addEventListener('click', () => {
       if (currentPage<totalPages) {
         currentPage++;
-        if (filtersActive) {
-          renderTablePage();
-          renderPagination();
-        } else {
-          loadPage();
-        }
+        loadPage();
       }
     });
   }
