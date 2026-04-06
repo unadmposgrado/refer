@@ -5,6 +5,30 @@ import { supabase } from './supabaseClient.js';
 import { getUser } from './auth.js';
 
 /**
+ * Normaliza las claves del objeto metadata para estandarizar formato.
+ * Acepta claves en inglés o español y convierte al formato esperado (español).
+ * @param {Object} meta Objeto metadata con claves potencialmente inconsistentes.
+ * @returns {Object|null} Objeto metadata normalizado, o null si meta no es válido.
+ */
+function normalizeMetadata(meta) {
+  if (!meta || typeof meta !== 'object') return null;
+
+  return {
+    autor: meta.autor || meta.author || '',
+    titulo: meta.titulo || meta.title || '',
+    anio: meta.anio || meta.year || '',
+    editorial: meta.editorial || '',
+    revista: meta.revista || '',
+    volumen: meta.volumen || '',
+    numero: meta.numero || meta.issue || '',
+    paginas: meta.paginas || meta.pages || '',
+    doi_url: meta.doi_url || meta.url || '',
+    sitio: meta.sitio || meta.website || '',
+    fecha: meta.fecha || meta.date || ''
+  };
+}
+
+/**
  * Guarda una nueva cita asociada al usuario actual.
  * @param {Object} data Campos de la cita según especificación.
  * @returns {Object} Resultado de la inserción ({ data, error }).
@@ -30,7 +54,7 @@ export async function saveCitation(data) {
     llm_response: data.llm_response || null,
     citation_text: data.citation_text || null,
     source_type: data.source_type || 'ia',
-    metadata: data.metadata || null
+    metadata: data.metadata ? normalizeMetadata(data.metadata) : null
   };
 
   const { data: inserted, error } = await supabase

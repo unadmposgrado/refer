@@ -61,7 +61,7 @@ function exportToCSV(data) {
     let autorTitulo = '';
     if (sourceType === 'book') {
       const meta = c.metadata || {};
-      const autor = meta.autor || '';
+      const autor = getAutor(meta) || '';
       const titulo = meta.titulo || '';
       autorTitulo = [autor, titulo].filter(Boolean).join(' / ');
     }
@@ -94,6 +94,34 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * Helper para obtener autor desde metadata con múltiples formatos soportados.
+ * Maneja: autor (string), author (legacy), autores (array de objetos)
+ */
+function getAutor(meta = {}) {
+  if (!meta || typeof meta !== 'object') return '';
+
+  // caso principal: string directo
+  if (meta.autor) return meta.autor;
+
+  // compatibilidad legacy: author en inglés
+  if (meta.author) return meta.author;
+
+  // caso autores array: [{ nombre, apellido }, ...]
+  if (Array.isArray(meta.autores)) {
+    return meta.autores
+      .map(a => {
+        const nombre = a?.nombre || '';
+        const apellido = a?.apellido || '';
+        return `${nombre} ${apellido}`.trim();
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  return '';
 }
 
 function formatDateForPrint(dateStr) {
@@ -259,7 +287,6 @@ async function renderHistorial() {
     }
   }
 
-
   // Extraemos render de IA para no tocar la lógica actual y soportar nuevos tipos.
   function renderIACitation(c) {
     const modelDisplay = c.models?.name || c.model_name_custom || '—';
@@ -288,7 +315,7 @@ async function renderHistorial() {
         </div>
 
         <div class="history-body">
-          <p><strong>Autor:</strong> ${meta.autor || ''}</p>
+          <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
           <p><strong>Año:</strong> ${meta.anio || ''}</p>
           <p><strong>Título:</strong> ${meta.titulo || ''}</p>
           <p><strong>Editorial:</strong> ${meta.editorial || ''}</p>
@@ -314,7 +341,7 @@ async function renderHistorial() {
         </div>
 
         <div class="history-body">
-          <p><strong>Autor:</strong> ${meta.autor || ''}</p>
+          <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
           <p><strong>Año:</strong> ${meta.anio || ''}</p>
           <p><strong>Título:</strong> ${meta.titulo || ''}</p>
           <p><strong>Revista:</strong> ${meta.revista || ''}</p>
@@ -344,7 +371,7 @@ async function renderHistorial() {
         </div>
 
         <div class="history-body">
-          <p><strong>Autor:</strong> ${meta.autor || ''}</p>
+          <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
           <p><strong>Fecha:</strong> ${meta.fecha || ''}</p>
           <p><strong>Título:</strong> ${meta.titulo || ''}</p>
           <p><strong>Sitio:</strong> ${meta.sitio || ''}</p>
