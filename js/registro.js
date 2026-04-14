@@ -6,6 +6,7 @@
 // =============================
 import { supabase } from './supabaseClient.js';
 import { getNiveles, getDivisiones, getProgramas, getProgramasPorNivel } from './catalogos/programas.js';
+import { loadMarkdownContent } from './markdownRenderer.js';
 
 
 // =============================
@@ -37,6 +38,13 @@ async function initRegister() {
   const form = document.getElementById('registerForm');
   if (form) {
     form.addEventListener('submit', handleRegister);
+    
+    // Cargar contenido Markdown del aviso de privacidad
+    try {
+      await loadMarkdownContent('./content/aviso-privacidad.md', 'aviso-privacidad');
+    } catch (error) {
+      console.warn('No se pudo cargar el aviso de privacidad:', error);
+    }
     
     // Inicializar selects de programas
     await initProgramSelects();

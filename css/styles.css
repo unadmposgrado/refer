@@ -398,6 +398,50 @@ input:focus, textarea:focus, select:focus{
 .model-gemini { color: blue; font-weight:600; }
 .model-claude { color: purple; font-weight:600; }
 
+/* estilos para contenedores de Markdown renderizado */
+.markdown-container {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.markdown-container h1,
+.markdown-container h2,
+.markdown-container h3 {
+  margin: 1rem 0 0.5rem 0;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+}
+
+.markdown-container h1 { font-size: 1.5rem; }
+.markdown-container h2 { font-size: 1.25rem; }
+.markdown-container h3 { font-size: 1.1rem; }
+
+.markdown-container p {
+  margin: 0.5rem 0;
+  color: #374151;
+  text-align: justify;
+}
+
+.markdown-container a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.markdown-container a:hover {
+  text-decoration: underline;
+}
+
+.markdown-container strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.markdown-container em {
+  font-style: italic;
+  color: #4b5563;
+}
+
 /* clase específica para el consentimiento de privacidad en registro */
 .form-row.privacy-consent {
   display: flex !important;
