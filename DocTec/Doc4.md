@@ -303,13 +303,18 @@ CREATE TABLE programs (
 );
 
 CREATE TABLE profiles (
-  id CHAR(36) PRIMARY KEY,
+  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   full_name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
+  tipo_usuario VARCHAR(50),
+  nivel_educativo VARCHAR(100),
+  division VARCHAR(100),
+  program_id UUID,
+  matricula VARCHAR(50),
+  metadata JSONB DEFAULT '{}'::jsonb,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
-  program_id CHAR(36),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (program_id) REFERENCES programs(id)
 );
 
