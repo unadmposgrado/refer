@@ -14,32 +14,99 @@
     <section class="form-section">
       <h2>Crear cuenta</h2>
       <form id="registerForm" class="form" novalidate>
-        <!-- orden solicitado -->
+        <!-- Nombre completo -->
         <div class="form-row">
           <label for="fullName">Nombre completo <span class="required">*</span></label>
           <input type="text" id="fullName" name="fullName" required placeholder="Tu nombre completo">
         </div>
-        <div class="form-row">
-          <label for="nivel">Nivel educativo <span class="required">*</span></label>
-          <select id="nivel" name="nivel" required>
-            <option value="">Selecciona un nivel</option>
+
+        <!-- Tipo de usuario (EJE PRINCIPAL) -->
+        <div class="form-row" id="tipo-usuario-container">
+          <label for="tipoUsuario">Tipo de usuario <span class="required">*</span></label>
+          <select id="tipoUsuario" name="tipoUsuario" required>
+            <option value="">Selecciona tu tipo</option>
+            <option value="estudiante_universidad">Estudiante UnADM</option>
+            <option value="estudiante_externo">Estudiante Externo</option>
+            <option value="academico_universidad">Figura académica UnADM</option>
+            <option value="externo">Usuario Externo</option>
           </select>
         </div>
-        <div class="form-row" id="division-container" style="display: none;">
-          <label for="division">División</label>
-          <select id="division" name="division">
-            <option value="">Selecciona una división</option>
-          </select>
+
+        <!-- CASO A: Estudiante Universidad (nivel -> división -> programa + matricula) -->
+        <div id="estudiante-universidad-container" style="display: none;">
+          <div class="form-row" id="nivel-container">
+            <label for="nivel">Nivel educativo <span class="required">*</span></label>
+            <select id="nivel" name="nivel">
+              <option value="">Selecciona un nivel</option>
+            </select>
+          </div>
+          <div class="form-row" id="division-container" style="display: none;">
+            <label for="division">División</label>
+            <select id="division" name="division">
+              <option value="">Selecciona una división</option>
+            </select>
+          </div>
+          <div class="form-row" id="programa-container">
+            <label for="programa">Programa educativo <span class="required">*</span></label>
+            <select id="programa" name="programa" disabled>
+              <option value="">Selecciona un programa</option>
+            </select>
+          </div>
+          <div class="form-row" id="matricula-container">
+            <label for="matricula">Matrícula</label>
+            <input type="text" id="matricula" name="matricula" placeholder="Tu matrícula UnADM">
+          </div>
         </div>
-        <div class="form-row">
-          <label for="programa">Programa educativo <span class="required">*</span></label>
-          <select id="programa" name="programa" required disabled>
-            <option value="">Selecciona un programa</option>
-          </select>
+
+        <!-- CASO B: Estudiante Externo (nivel + programa texto libre) -->
+        <div id="estudiante-externo-container" style="display: none;">
+          <div class="form-row" id="nivel-externo-container">
+            <label for="nivelExterno">Nivel educativo <span class="required">*</span></label>
+            <select id="nivelExterno" name="nivelExterno">
+              <option value="">Selecciona un nivel</option>
+            </select>
+          </div>
+          <div class="form-row" id="programa-externo-container">
+            <label for="programaExterno">Programa educativo <span class="required">*</span></label>
+            <input type="text" id="programaExterno" name="programaExterno" placeholder="Ej: Ingeniería en Sistemas, Administración, etc.">
+          </div>
         </div>
-        <div class="form-row">
-          <label for="matricula">Matrícula</label>
-          <input type="text" id="matricula" name="matricula" placeholder="Tu matrícula UnADM">
+
+        <!-- CASO C: Académico Universidad (división estática + matricula opcional) -->
+        <div id="academico-universidad-container" style="display: none;">
+          <div class="form-row" id="division-academico-container">
+            <label for="divisionAcademico">División <span class="required">*</span></label>
+            <select id="divisionAcademico" name="divisionAcademico">
+              <option value="">Selecciona una división</option>
+            </select>
+          </div>
+          <div class="form-row" id="matricula-academico-container">
+            <label for="matriculaAcademico">Matrícula (opcional)</label>
+            <input type="text" id="matriculaAcademico" name="matriculaAcademico" placeholder="Tu matrícula UnADM">
+          </div>
+        </div>
+
+        <!-- CASO D: Externo (sub-selector academico/usuario) -->
+        <div id="externo-container" style="display: none;">
+          <div class="form-row" id="tipo-externo-container">
+            <label for="tipoExterno">¿Académico o usuario? <span class="required">*</span></label>
+            <select id="tipoExterno" name="tipoExterno">
+              <option value="">Selecciona</option>
+              <option value="academico">Académico</option>
+              <option value="usuario">Usuario</option>
+            </select>
+          </div>
+          <!-- Sub-campos para académico externo -->
+          <div id="externo-academico-container" style="display: none;">
+            <div class="form-row">
+              <label for="externoInstitucion">Institución (opcional)</label>
+              <input type="text" id="externoInstitucion" name="externoInstitucion" placeholder="Ej: Universidad Nacional Autónoma de México">
+            </div>
+            <div class="form-row">
+              <label for="externoDisciplina">Área o disciplina (opcional)</label>
+              <input type="text" id="externoDisciplina" name="externoDisciplina" placeholder="Ej: Educación, Tecnología, etc.">
+            </div>
+          </div>
         </div>
         <div class="form-row">
           <label for="email">Correo electrónico <span class="required">*</span></label>
