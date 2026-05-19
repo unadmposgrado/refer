@@ -18,7 +18,7 @@ export function initArticulo(container) {
         </div>
 
         <div class="form-row">
-          <label>Autores <span class="required">*</span></label>
+          <label>Autor(es) <span class="required">*</span></label>
           <div id="authorsContainer" aria-live="polite"></div>
           <button type="button" id="addAuthorBtn" class="btn-secondary" style="margin-top: 0.5rem;">Agregar autor</button>
         </div>
