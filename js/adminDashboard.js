@@ -277,6 +277,14 @@ async function renderGlobalCitationHistory() {
 
   // nueva función independiente que obtiene todo el historial desde Supabase
   async function exportarHistorialCompleto() {
+    const safe = (v) => v ?? '';
+    const tipoUsuarioMap = {
+      estudiante_universidad: 'Estudiante UnADM',
+      estudiante_externo: 'Estudiante externo',
+      academico_universidad: 'Figura académica UnADM',
+      externo: 'Usuario externo'
+    };
+
     try {
       // consulta independiente para traer todo el historial enriquecido
       const { data, error } = await supabase
@@ -287,7 +295,19 @@ async function renderGlobalCitationHistory() {
           prompt,
           llm_response,
           model_name_custom,
-          profiles(full_name, programs(nombre, nivel, division)),
+          profiles(
+            full_name,
+            tipo_usuario,
+            matricula,
+            nivel_educativo,
+            division,
+            metadata,
+            programs(
+              nombre,
+              nivel,
+              division
+            )
+          ),
           models(name)
         `)
         .order('created_at', { ascending: false });
@@ -304,7 +324,15 @@ async function renderGlobalCitationHistory() {
         'Fecha',
         'Hora',
         'Usuario',
-        'Programa',
+        'Tipo de usuario',
+        'Matrícula',
+        'Nivel educativo',
+        'División o coordinación',
+        'Programa institucional',
+        'Programa externo',
+        'Tipo externo',
+        'Institución externa',
+        'Disciplina externa',
         'Modelo',
         'Tema',
         'Prompt',
@@ -317,16 +345,50 @@ async function renderGlobalCitationHistory() {
         const hora = dt
           ? dt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
           : '';
-        const usuario = c.profiles?.full_name || '';
-        const programa = c.profiles?.programs?.nombre || 'Desconocido';
+
+        const profile = c.profiles || {};
+        const metadata = profile.metadata || {};
+
+        const usuario = safe(profile.full_name);
+        const tipoUsuarioSlug = profile.tipo_usuario || '';
+        const tipoUsuario = tipoUsuarioMap[tipoUsuarioSlug] || tipoUsuarioSlug || '';
+        const matricula = safe(profile.matricula);
+        const nivelEducativo = safe(profile.nivel_educativo);
+        const division = safe(profile.division);
+
+        const programaInstitucional = safe(profile.programs?.nombre);
+        const programaExterno = safe(metadata.programa_educativo);
+        const tipoExterno = safe(metadata.tipo_externo);
+        const institucionExterna = safe(metadata.institucion);
+        const disciplinaExterna = safe(metadata.disciplina);
+
         let modelo = '';
         if (c.models?.name) modelo = c.models.name;
         else if (c.model_name_custom) modelo = c.model_name_custom;
         else modelo = 'No especificado';
-        const tema = c.tema || '';
-        const prompt = c.prompt || '';
-        const respuesta = c.llm_response || '';
-        return [fecha, hora, usuario, programa, modelo, tema, prompt, respuesta];
+
+        const tema = safe(c.tema);
+        const prompt = safe(c.prompt);
+        const respuesta = safe(c.llm_response);
+
+        return [
+          fecha,
+          hora,
+          usuario,
+          tipoUsuario,
+          matricula,
+          nivelEducativo,
+          division,
+          programaInstitucional,
+          programaExterno,
+          tipoExterno,
+          institucionExterna,
+          disciplinaExterna,
+          modelo,
+          tema,
+          prompt,
+          respuesta
+        ];
       });
 
       const BOM = '\uFEFF';
