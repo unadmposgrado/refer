@@ -10,6 +10,111 @@ import { getNiveles, getDivisiones, getProgramas, getProgramasPorNivel } from '.
 import { loadMarkdownContent } from './markdownRenderer.js';
 
 // =============================
+// 🔹 MAPEOS DE NORMALIZACIÓN
+// =============================
+/**
+ * Función para normalizar texto: minúsculas, sin acentos, trim
+ */
+function normalizarTexto(texto) {
+  if (!texto) return '';
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+const NIVEL_MAP = {
+  'licenciatura': 'licenciatura',
+  'posgrado': 'posgrado',
+  'tecnico superior universitario': 'tsu'
+};
+
+// =============================
+// 🔹 CONFIGURACIÓN DE UI DINÁMICA
+// =============================
+const UI_STRINGS = {
+  'estudiante_universidad': {
+    divisionLabel: 'División',
+    divisionPlaceholder: 'Selecciona una división',
+    divisionError: 'Por favor selecciona una división.',
+    otherLabel: 'Otra'
+  },
+  'academico_universidad': {
+    divisionLabel: 'División o Coordinación',
+    divisionPlaceholder: 'Selecciona una división o coordinación',
+    divisionError: 'Por favor selecciona una división o coordinación.',
+    otherLabel: 'Otra área',
+    extraOptions: [
+      { value: 'Coordinación Académica y de Investigación (CAI)', label: 'Coordinación Académica y de Investigación (CAI)' }
+    ]
+  }
+};
+
+/**
+ * Agrega opciones adicionales y la opción "Otra" a un select de división
+ */
+function populateDivisionOptions(selectElement, divisiones, strings) {
+  if (!selectElement) return;
+  
+  selectElement.innerHTML = `<option value="">${strings.divisionPlaceholder}</option>`;
+  
+  // Agregar divisiones reales
+  divisiones.forEach(division => {
+    const option = document.createElement('option');
+    option.value = division.trim();
+    option.textContent = division;
+    selectElement.appendChild(option);
+  });
+  
+  // Agregar opciones extra si existen (ej. CAI)
+  if (strings.extraOptions) {
+    strings.extraOptions.forEach(extra => {
+      const option = document.createElement('option');
+      option.value = extra.value;
+      option.textContent = extra.label;
+      selectElement.appendChild(option);
+    });
+  }
+  
+  // Agregar opción "Otra" adaptada
+  const otraOption = document.createElement('option');
+  otraOption.value = 'Otra'; // El valor se mantiene como 'Otra' para lógica interna/DB
+  otraOption.textContent = strings.otherLabel;
+  selectElement.appendChild(otraOption);
+}
+
+/**
+ * Actualiza los textos de la interfaz según el tipo de usuario
+ */
+function updateDivisionUI(tipoUsuario) {
+  const strings = UI_STRINGS[tipoUsuario] || UI_STRINGS['estudiante_universidad'];
+  
+  // Actualizar Label Académico
+  const labelAcademico = document.querySelector('label[for="divisionAcademico"]');
+  if (labelAcademico) {
+    labelAcademico.innerHTML = `${strings.divisionLabel} <span class="required">*</span>`;
+  }
+  
+  // Actualizar Label Estudiante
+  const labelEstudiante = document.querySelector('label[for="division"]');
+  if (labelEstudiante) {
+    labelEstudiante.textContent = strings.divisionLabel;
+  }
+  
+  // Actualizar Placeholders si los selects ya existen
+  const selectAcademico = document.getElementById('divisionAcademico');
+  if (selectAcademico && selectAcademico.options.length > 0) {
+    selectAcademico.options[0].textContent = strings.divisionPlaceholder;
+  }
+  
+  const selectEstudiante = document.getElementById('division');
+  if (selectEstudiante && selectEstudiante.options.length > 0) {
+    selectEstudiante.options[0].textContent = strings.divisionPlaceholder;
+  }
+}
+
+// =============================
 // 🔹 ESTADO GLOBAL DEL TIPO DE USUARIO
 // =============================
 let tipoUsuarioActual = null;
@@ -110,6 +215,9 @@ async function handleTipoUsuarioChange(event) {
   toggleField('externo-container', false);
   toggleField('externo-academico-container', false);
   
+  // Actualizar textos de UI dinámicamente
+  updateDivisionUI(tipoUsuario);
+  
   // Limpiar todos los campos dinámicos
   clearFieldsByType(tipoUsuario);
   
@@ -168,10 +276,6 @@ async function initDivisionsAcademico() {
   if (!divisionSelect) return;
   
   try {
-    // Obtener todas las divisiones únicas existentes (sin filtro de nivel)
-    const divisiones = await getDivisiones('Licenciatura'); // Usar un nivel cualquiera para obtener todas las divisiones
-    
-    // También obtener divisiones de otros niveles
     const nivelesExistentes = await getNiveles();
     const allDivisiones = new Set();
     
@@ -185,21 +289,8 @@ async function initDivisionsAcademico() {
     
     console.log('Divisiones cargadas para académicos:', divisionesArray);
     
-    divisionSelect.innerHTML = '<option value="">Selecciona una división</option>';
-    
-    // Agregar divisiones reales
-    divisionesArray.forEach(division => {
-      const option = document.createElement('option');
-      option.value = division;
-      option.textContent = division;
-      divisionSelect.appendChild(option);
-    });
-    
-    // Agregar opción "Otra" al final
-    const otraOption = document.createElement('option');
-    otraOption.value = 'Otra';
-    otraOption.textContent = 'Otra';
-    divisionSelect.appendChild(otraOption);
+    const strings = UI_STRINGS[tipoUsuarioActual] || UI_STRINGS['estudiante_universidad'];
+    populateDivisionOptions(divisionSelect, divisionesArray, strings);
     
   } catch (error) {
     console.error('Error al cargar divisiones para académicos:', error);
@@ -225,6 +316,11 @@ async function initRegister() {
   const tipoUsuarioSelect = document.getElementById('tipoUsuario');
   if (tipoUsuarioSelect) {
     tipoUsuarioSelect.addEventListener('change', handleTipoUsuarioChange);
+    
+    // Inicializar UI si hay un valor seleccionado (por persistencia de sesión/recarga)
+    if (tipoUsuarioSelect.value) {
+      updateDivisionUI(tipoUsuarioSelect.value);
+    }
   }
   
   // Agregar listener para sub-selector de tipo externo
@@ -268,15 +364,6 @@ async function initProgramSelects() {
   try {
     let niveles = await getNiveles();
     
-    // Función para normalizar texto: minúsculas, sin acentos, trim
-    function normalizarTexto(texto) {
-      return texto
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim();
-    }
-    
     // Orden deseado (valores originales para referencia)
     const ordenDeseado = [
       "Licenciatura",
@@ -313,7 +400,9 @@ async function initProgramSelects() {
     
     niveles.forEach(nivel => {
       const option = document.createElement('option');
-      option.value = nivel;
+      // Normalizar el value para la base de datos (slug), pero mantener label original de BD
+      const norm = normalizarTexto(nivel);
+      option.value = NIVEL_MAP[norm] || norm;
       option.textContent = nivel;
       nivelSelect.appendChild(option);
     });
@@ -332,15 +421,6 @@ async function initProgramSelectsExterno() {
   
   try {
     let niveles = await getNiveles();
-    
-    // Función para normalizar texto
-    function normalizarTexto(texto) {
-      return texto
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim();
-    }
     
     // Orden deseado
     const ordenDeseado = [
@@ -375,7 +455,9 @@ async function initProgramSelectsExterno() {
     
     niveles.forEach(nivel => {
       const option = document.createElement('option');
-      option.value = nivel;
+      // Normalizar el value para la base de datos, pero mantener label visible
+      const norm = normalizarTexto(nivel);
+      option.value = NIVEL_MAP[norm] || norm;
       option.textContent = nivel;
       nivelExternoSelect.appendChild(option);
     });
@@ -388,40 +470,39 @@ async function initProgramSelectsExterno() {
 // 🔹 MANEJAR CAMBIO DE NIVEL
 // =============================
 async function handleNivelChange(event) {
-  const nivel = event.target.value;
+  const nivelNormalizado = event.target.value;
   const divisionSelect = document.getElementById('division');
   const divisionContainer = document.getElementById('division-container');
   const programaSelect = document.getElementById('programa');
   
+  const strings = UI_STRINGS[tipoUsuarioActual] || UI_STRINGS['estudiante_universidad'];
+  
   // Limpiar división y programa
-  if (divisionSelect) divisionSelect.innerHTML = '<option value="">Selecciona una división</option>';
+  if (divisionSelect) divisionSelect.innerHTML = `<option value="">${strings.divisionPlaceholder}</option>`;
   if (programaSelect) {
     programaSelect.innerHTML = '<option value="">Selecciona un programa</option>';
     programaSelect.disabled = true;
   }
   if (divisionContainer) divisionContainer.style.display = 'none';
   
-  if (!nivel) return;
+  if (!nivelNormalizado) return;
+  
+  // Obtener el texto original del option (el que está en la base de datos)
+  const nivelOriginal = event.target.options[event.target.selectedIndex].text;
   
   try {
     // Obtener divisiones para este nivel
-    const divisiones = await getDivisiones(nivel);
+    const divisiones = await getDivisiones(nivelOriginal);
     
     if (divisiones.length > 0) {
       // Si existen divisiones, mostrarlas
       if (divisionContainer) divisionContainer.style.display = ''; // Dejar que CSS controle
       if (divisionSelect) {
-        divisionSelect.innerHTML = '<option value="">Selecciona una división</option>';
-        divisiones.forEach(division => {
-          const option = document.createElement('option');
-          option.value = division;
-          option.textContent = division;
-          divisionSelect.appendChild(option);
-        });
+        populateDivisionOptions(divisionSelect, divisiones, strings);
       }
     } else {
       // Si no hay divisiones, cargar programas directamente
-      await loadProgramasPorNivel(nivel);
+      await loadProgramasPorNivel(nivelOriginal);
     }
   } catch (error) {
     console.error('Error al cambiar nivel:', error);
@@ -438,10 +519,11 @@ async function handleDivisionChange(event) {
   
   if (!division || !nivelSelect) return;
   
-  const nivel = nivelSelect.value;
+  // Obtener el texto original del nivel seleccionado
+  const nivelOriginal = nivelSelect.options[nivelSelect.selectedIndex].text;
   
   try {
-    const programas = await getProgramas(nivel, division);
+    const programas = await getProgramas(nivelOriginal, division);
     
     if (programaSelect) {
       programaSelect.innerHTML = '<option value="">Selecciona un programa</option>';
@@ -489,12 +571,12 @@ async function loadProgramasPorNivel(nivel) {
 // 🔹 CONSTRUIR PAYLOAD DINÁMICO SEGÚN TIPO DE USUARIO
 // =============================
 function buildPayload(form, tipoUsuario) {
-  const fullName = form.fullName.value.trim();
-  const email = form.email.value.trim();
+  const fullName = (form.fullName.value || '').trim();
+  const strings = UI_STRINGS[tipoUsuario] || UI_STRINGS['estudiante_universidad'];
   
   let payload = {
-    full_name: fullName,
-    tipo_usuario: tipoUsuario,
+    full_name: fullName || null,
+    tipo_usuario: (tipoUsuario || '').trim() || null,
     matricula: null,
     nivel_educativo: null,
     division: null,
@@ -504,55 +586,55 @@ function buildPayload(form, tipoUsuario) {
   
   if (tipoUsuario === 'estudiante_universidad') {
     // CASO A: nivel -> división -> programa + matricula
-    const nivel = form.nivel.value.trim();
-    const division = form.division.value.trim();
-    const programa = form.programa.value.trim();
-    const matricula = form.matricula.value.trim();
+    const nivel = (form.nivel.value || '').trim();
+    const division = (form.division.value || '').trim();
+    const programa = (form.programa.value || '').trim();
+    const matricula = (form.matricula.value || '').trim();
     
     if (!nivel || !programa) {
       throw new Error('Por favor completa nivel y programa educativo.');
     }
     
-    payload.nivel_educativo = nivel;
+    payload.nivel_educativo = nivel || null;
     payload.division = division || null;
-    payload.program_id = programa; // Mantiene el program_id para estudiantes universidad
+    payload.program_id = programa || null;
     payload.matricula = matricula || null;
     
   } else if (tipoUsuario === 'estudiante_externo') {
     // CASO B: nivel + programa (texto libre)
-    const nivelExterno = form.nivelExterno.value.trim();
-    const programaExterno = form.programaExterno.value.trim();
+    const nivelExterno = (form.nivelExterno.value || '').trim();
+    const programaExterno = (form.programaExterno.value || '').trim();
     
     if (!nivelExterno || !programaExterno) {
       throw new Error('Por favor completa nivel y programa educativo.');
     }
     
-    payload.nivel_educativo = nivelExterno;
-    payload.metadata.programa_educativo = programaExterno;
+    payload.nivel_educativo = nivelExterno || null;
+    payload.metadata.programa_educativo = programaExterno || null;
     
   } else if (tipoUsuario === 'academico_universidad') {
     // CASO C: división (estática) + matricula (opcional)
-    const divisionAcademico = form.divisionAcademico.value.trim();
-    const matriculaAcademico = form.matriculaAcademico.value.trim();
+    const divisionAcademico = (form.divisionAcademico.value || '').trim();
+    const matriculaAcademico = (form.matriculaAcademico.value || '').trim();
     
     if (!divisionAcademico) {
-      throw new Error('Por favor selecciona una división.');
+      throw new Error(strings.divisionError);
     }
     
-    payload.division = divisionAcademico;
+    payload.division = divisionAcademico || null;
     payload.matricula = matriculaAcademico || null;
     
   } else if (tipoUsuario === 'externo') {
     // CASO D: sub-selector + campos según sub-tipo
-    const tipoExterno = form.tipoExterno.value.trim();
+    const tipoExterno = (form.tipoExterno.value || '').trim();
     
     if (!tipoExterno) {
       throw new Error('Por favor selecciona si eres académico o usuario.');
     }
     
     if (tipoExterno === 'academico') {
-      const institucion = form.externoInstitucion.value.trim();
-      const disciplina = form.externoDisciplina.value.trim();
+      const institucion = (form.externoInstitucion.value || '').trim();
+      const disciplina = (form.externoDisciplina.value || '').trim();
       
       payload.metadata.tipo_externo = 'academico';
       if (institucion) payload.metadata.institucion = institucion;
@@ -562,6 +644,12 @@ function buildPayload(form, tipoUsuario) {
     }
   }
   
+  // Limpiar metadatos vacíos si es necesario
+  if (Object.keys(payload.metadata).length === 0) {
+    // Mantener como objeto vacío para cumplir con el trigger si es necesario
+    // o asegurar que sea un objeto válido
+  }
+  
   return payload;
 }
 
@@ -569,10 +657,11 @@ function buildPayload(form, tipoUsuario) {
 // 🔹 VALIDAR FORMULARIO SEGÚN TIPO DE USUARIO
 // =============================
 function validateFormByType(form, tipoUsuario) {
-  const email = form.email.value.trim();
-  const password = form.password.value.trim();
-  const confirmPassword = form.confirmPassword.value.trim();
-  const fullName = form.fullName.value.trim();
+  const email = (form.email.value || '').trim();
+  const password = form.password.value; // No trim para contraseñas
+  const confirmPassword = form.confirmPassword.value;
+  const fullName = (form.fullName.value || '').trim();
+  const strings = UI_STRINGS[tipoUsuario] || UI_STRINGS['estudiante_universidad'];
   
   // Validaciones básicas comunes
   if (!email || !password || !confirmPassword || !fullName) {
@@ -589,27 +678,27 @@ function validateFormByType(form, tipoUsuario) {
   
   // Validaciones específicas por tipo
   if (tipoUsuario === 'estudiante_universidad') {
-    const nivel = form.nivel.value.trim();
-    const programa = form.programa.value.trim();
+    const nivel = (form.nivel.value || '').trim();
+    const programa = (form.programa.value || '').trim();
     
     if (!nivel || !programa) {
       throw new Error('Por favor completa nivel y programa educativo.');
     }
   } else if (tipoUsuario === 'estudiante_externo') {
-    const nivelExterno = form.nivelExterno.value.trim();
-    const programaExterno = form.programaExterno.value.trim();
+    const nivelExterno = (form.nivelExterno.value || '').trim();
+    const programaExterno = (form.programaExterno.value || '').trim();
     
     if (!nivelExterno || !programaExterno) {
       throw new Error('Por favor completa nivel y programa educativo.');
     }
   } else if (tipoUsuario === 'academico_universidad') {
-    const divisionAcademico = form.divisionAcademico.value.trim();
+    const divisionAcademico = (form.divisionAcademico.value || '').trim();
     
     if (!divisionAcademico) {
-      throw new Error('Por favor selecciona una división.');
+      throw new Error(strings.divisionError);
     }
   } else if (tipoUsuario === 'externo') {
-    const tipoExterno = form.tipoExterno.value.trim();
+    const tipoExterno = (form.tipoExterno.value || '').trim();
     
     if (!tipoExterno) {
       throw new Error('Por favor selecciona si eres académico o usuario.');
@@ -630,9 +719,9 @@ async function handleRegister(event) {
     return;
   }
 
-  const email = form.email.value.trim();
-  const password = form.password.value.trim();
-  const tipoUsuario = form.tipoUsuario.value.trim();
+  const email = (form.email.value || '').trim();
+  const password = form.password.value;
+  const tipoUsuario = (form.tipoUsuario.value || '').trim();
 
   try {
     // Validar formulario según tipo de usuario
@@ -640,6 +729,8 @@ async function handleRegister(event) {
     
     // Construir payload dinámico
     const payload = buildPayload(form, tipoUsuario);
+    
+    console.log('Enviando payload normalizado:', payload);
     
     // Enviar a Supabase con los datos en options.data
     const { data, error } = await supabase.auth.signUp({
@@ -651,7 +742,12 @@ async function handleRegister(event) {
     });
 
     if (error) {
-      alert('Error: ' + error.message);
+      // Manejar errores de constraint de la base de datos que vienen a través de Auth
+      if (error.message.includes('profiles_nivel_educativo_check')) {
+        alert('Error: El nivel educativo seleccionado no es válido para el sistema.');
+      } else {
+        alert('Error: ' + error.message);
+      }
       return;
     }
 
