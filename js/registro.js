@@ -54,7 +54,7 @@ const UI_STRINGS = {
 /**
  * Agrega opciones adicionales y la opción "Otra" a un select de división
  */
-function populateDivisionOptions(selectElement, divisiones, strings) {
+function populateDivisionOptions(selectElement, divisiones, strings, skipOther = false) {
   if (!selectElement) return;
   
   selectElement.innerHTML = `<option value="">${strings.divisionPlaceholder}</option>`;
@@ -77,11 +77,13 @@ function populateDivisionOptions(selectElement, divisiones, strings) {
     });
   }
   
-  // Agregar opción "Otra" adaptada
-  const otraOption = document.createElement('option');
-  otraOption.value = 'Otra'; // El valor se mantiene como 'Otra' para lógica interna/DB
-  otraOption.textContent = strings.otherLabel;
-  selectElement.appendChild(otraOption);
+  // Agregar opción "Otra" adaptada (si no se debe omitir)
+  if (!skipOther) {
+    const otraOption = document.createElement('option');
+    otraOption.value = 'Otra'; // El valor se mantiene como 'Otra' para lógica interna/DB
+    otraOption.textContent = strings.otherLabel;
+    selectElement.appendChild(otraOption);
+  }
 }
 
 /**
@@ -489,6 +491,11 @@ async function handleNivelChange(event) {
   
   // Obtener el texto original del option (el que está en la base de datos)
   const nivelOriginal = event.target.options[event.target.selectedIndex].text;
+  const nivelNorm = normalizarTexto(nivelOriginal);
+
+  // Validación específica: Estudiante UnADM de Licenciatura o TSU no debe ver opción "Otra"
+  const skipOther = (tipoUsuarioActual === 'estudiante_universidad') && 
+                    (nivelNorm === 'licenciatura' || nivelNorm === 'tecnico superior universitario');
   
   try {
     // Obtener divisiones para este nivel
@@ -498,7 +505,7 @@ async function handleNivelChange(event) {
       // Si existen divisiones, mostrarlas
       if (divisionContainer) divisionContainer.style.display = ''; // Dejar que CSS controle
       if (divisionSelect) {
-        populateDivisionOptions(divisionSelect, divisiones, strings);
+        populateDivisionOptions(divisionSelect, divisiones, strings, skipOther);
       }
     } else {
       // Si no hay divisiones, cargar programas directamente
