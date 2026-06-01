@@ -3,7 +3,7 @@
 
 import { requireAuth, getUserRole } from './auth.js';
 import { supabase } from './supabaseClient.js';
-import { renderMarkdown } from './historial.js';
+import { renderMarkdown, renderCitationDetail } from './historial.js';
 
 function getModelColor(modelName, organization) {
   const name = (modelName || '').toLowerCase();
@@ -465,6 +465,7 @@ async function renderGlobalCitationHistory() {
         prompt,
         citation_text,
         llm_response,
+        metadata,
         user_id,
         model_id,
         model_name_custom,
@@ -745,27 +746,15 @@ async function renderGlobalCitationHistory() {
     const modal = document.createElement('div');
     modal.className = 'history-modal-overlay';
     const programDisplay = getProgramName(c);
+    // reutilizar el render del historial individual para el detalle
+    const detailHtml = renderCitationDetail(c);
     modal.innerHTML = `
       <div class="history-modal">
         <button class="close-modal">×</button>
         <h3>Detalle de cita</h3>
         <p><strong>Usuario:</strong> ${c.profiles?.full_name||c.profiles?.email||''}</p>
         <p><strong>Programa:</strong> ${programDisplay}</p>
-        <p><strong>Modelo:</strong> ${c.models?.name||c.model_name_custom||'Desconocido'}</p>
-        <p><strong>Tema:</strong> ${c.tema||''}</p>
-        <p><strong>Prompt:</strong></p>
-        <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
-        <p><strong>Respuesta:</strong></p>
-        <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
-        <p><strong>Referencia APA:</strong></p>
-        <div class="markdown-body">${renderMarkdown(c.citation_text)}</div>
-        <p><strong>Fecha:</strong> ${c.created_at?new Date(c.created_at).toLocaleString('es-ES', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : ''}</p>
+        <div class="history-detail">${detailHtml}</div>
       </div>
     `;
     modal.addEventListener('click', e => {

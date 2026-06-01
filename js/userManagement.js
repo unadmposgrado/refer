@@ -28,7 +28,7 @@ export async function loadUsers() {
 
   const { data: citations, error: cErr } = await supabase
     .from('citations')
-    .select('user_id, model_id');
+    .select('user_id, model_id, source_type, model_name_custom');
   if (cErr) throw cErr;
 
   const { data: models, error: mErr } = await supabase
@@ -44,13 +44,23 @@ export async function loadUsers() {
   return (profiles || []).map(u => {
     const userCits = (citations || []).filter(c => c.user_id === u.id);
     const citationCount = userCits.length;
-    const mcount = {};
+    // contar modelos IA por nombre y tipos de fuente por usuario
+    const mcount = {}; // conteo por nombre de modelo IA
+    const typeCount = {}; // conteo por source_type (libro, article, web, thesis, etc.)
     userCits.forEach(c => {
-      const name = modelMap[c.model_id] || '';
-      if (name) {
-        mcount[name] = (mcount[name] || 0) + 1;
+      const rawType = (c.source_type || '').toLowerCase();
+      if (rawType === 'ia') {
+        const name = modelMap[c.model_id] || c.model_name_custom || '';
+        if (name) {
+          mcount[name] = (mcount[name] || 0) + 1;
+        }
+      } else {
+        const key = rawType || 'otro';
+        typeCount[key] = (typeCount[key] || 0) + 1;
       }
     });
+
+    // si hay modelos IA, preservamos el comportamiento actual: mostrar nombre del modelo más usado
     let topModel = '';
     let max = 0;
     Object.entries(mcount).forEach(([mn, cnt]) => {
@@ -59,6 +69,26 @@ export async function loadUsers() {
         topModel = mn;
       }
     });
+
+    // si no hay modelos IA, pero sí hay tipos de referencia, mostrar el tipo más usado (legible)
+    if (!topModel && Object.keys(typeCount).length > 0) {
+      const typeMapLabel = {
+        book: 'Libro',
+        article: 'Artículo',
+        web: 'Página web',
+        thesis: 'Tesis',
+        ia: 'IA'
+      };
+      let topType = '';
+      let topTypeCount = 0;
+      Object.entries(typeCount).forEach(([t, cnt]) => {
+        if (cnt > topTypeCount) {
+          topTypeCount = cnt;
+          topType = t;
+        }
+      });
+      topModel = typeMapLabel[topType] || (topType ? (topType.charAt(0).toUpperCase() + topType.slice(1)) : '');
+    }
     return {
       ...u,
       citationCount,

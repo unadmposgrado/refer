@@ -95,7 +95,6 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
-
 /**
  * Helper para obtener autor desde metadata con múltiples formatos soportados.
  * Maneja: autor (string), author (legacy), autores (array de objetos)
@@ -132,6 +131,119 @@ function formatDateForPrint(dateStr) {
   } catch (e) {
     return escapeHtml(dateStr);
   }
+}
+
+// Funciones de render por tipo (reutilizables desde otros módulos)
+function renderIACitation(c) {
+  const modelDisplay = c.models?.name || c.model_name_custom || '—';
+  return `
+    <div class="citation-text markdown-body">${renderMarkdown(c.citation_text)}</div>
+    <div class="citation-extra">
+      <strong>Tema:</strong> ${c.tema || ''}
+      <div><strong>Prompt:</strong></div>
+      <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
+      <div><strong>Respuesta:</strong></div>
+      <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
+    </div>
+    <div class="citation-meta">
+      <span class="meta-item"><strong>Modelo:</strong> ${modelDisplay}</span>
+      <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
+    </div>
+  `;
+}
+
+function renderBookCitation(c) {
+  const meta = c.metadata || {};
+  return `
+    <div class="history-item">
+      <div class="history-header">
+        <strong>📘 Libro</strong>
+      </div>
+
+      <div class="history-body">
+        <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
+        <p><strong>Año:</strong> ${meta.anio || ''}</p>
+        <p><strong>Título:</strong> ${meta.titulo || ''}</p>
+        <p><strong>Editorial:</strong> ${meta.editorial || ''}</p>
+        ${meta.doi_url ? `<p><strong>DOI/URL:</strong> ${meta.doi_url}</p>` : ''}
+      </div>
+
+      <div class="history-reference">
+        ${renderMarkdown(c.citation_text)}
+      </div>
+    </div>
+    <div class="citation-meta">
+      <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
+    </div>
+  `;
+}
+
+function renderArticleCitation(c) {
+  const meta = c.metadata || {};
+  return `
+    <div class="history-item">
+      <div class="history-header">
+        <strong>📄 Artículo</strong>
+      </div>
+
+      <div class="history-body">
+        <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
+        <p><strong>Año:</strong> ${meta.anio || ''}</p>
+        <p><strong>Título:</strong> ${meta.titulo || ''}</p>
+        <p><strong>Revista:</strong> ${meta.revista || ''}</p>
+        <p><strong>Volumen:</strong> ${meta.volumen || ''}</p>
+        <p><strong>Número:</strong> ${meta.numero || ''}</p>
+        <p><strong>Páginas:</strong> ${meta.paginas || ''}</p>
+        ${meta.doi_url ? `<p><strong>DOI/URL:</strong> ${meta.doi_url}</p>` : ''}
+      </div>
+
+      <div class="history-reference">
+        ${renderMarkdown(c.citation_text)}
+      </div>
+    </div>
+    <div class="citation-meta">
+      <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
+    </div>
+  `;
+}
+
+function renderWebCitation(c) {
+  const meta = c.metadata || {};
+  const url = (meta.url || '').trim();
+  return `
+    <div class="history-item">
+      <div class="history-header">
+        <strong>🌐 Sitio web</strong>
+      </div>
+
+      <div class="history-body">
+        <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
+        <p><strong>Fecha:</strong> ${meta.fecha || ''}</p>
+        <p><strong>Título:</strong> ${meta.titulo || ''}</p>
+        <p><strong>Sitio:</strong> ${meta.sitio || ''}</p>
+        ${url ? `<p><strong>URL:</strong> <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></p>` : ''}
+      </div>
+
+      <div class="history-reference">
+        ${renderMarkdown(c.citation_text)}
+      </div>
+    </div>
+    <div class="citation-meta">
+      <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
+    </div>
+  `;
+}
+
+// función compartida para renderizar el detalle de una cita (reutilizable en Historial Global)
+export function renderCitationDetail(c) {
+  if (!c || typeof c !== 'object') return '';
+  const type = (c.source_type || '').toLowerCase();
+  if (type === 'ia') return renderIACitation(c);
+  if (type === 'book') return renderBookCitation(c);
+  if (type === 'article') return renderArticleCitation(c);
+  if (type === 'web') return renderWebCitation(c);
+  // fallback: usar formato IA como genérico
+  return renderIACitation(c);
 }
 
 function exportToHTML(data) {
@@ -286,108 +398,6 @@ async function renderHistorial() {
       return dateStr;
     }
   }
-
-  // Extraemos render de IA para no tocar la lógica actual y soportar nuevos tipos.
-  function renderIACitation(c) {
-    const modelDisplay = c.models?.name || c.model_name_custom || '—';
-    return `
-      <div class="citation-text markdown-body">${renderMarkdown(c.citation_text)}</div>
-      <div class="citation-extra">
-        <strong>Tema:</strong> ${c.tema || ''}
-        <div><strong>Prompt:</strong></div>
-        <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
-        <div><strong>Respuesta:</strong></div>
-        <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
-      </div>
-      <div class="citation-meta">
-        <span class="meta-item"><strong>Modelo:</strong> ${modelDisplay}</span>
-        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
-      </div>
-    `;
-  }
-
-  function renderBookCitation(c) {
-    const meta = c.metadata || {};
-    return `
-      <div class="history-item">
-        <div class="history-header">
-          <strong>📘 Libro</strong>
-        </div>
-
-        <div class="history-body">
-          <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
-          <p><strong>Año:</strong> ${meta.anio || ''}</p>
-          <p><strong>Título:</strong> ${meta.titulo || ''}</p>
-          <p><strong>Editorial:</strong> ${meta.editorial || ''}</p>
-          ${meta.doi_url ? `<p><strong>DOI/URL:</strong> ${meta.doi_url}</p>` : ''}
-        </div>
-
-        <div class="history-reference">
-          ${renderMarkdown(c.citation_text)}
-        </div>
-      </div>
-      <div class="citation-meta">
-        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
-      </div>
-    `;
-  }
-
-  function renderArticleCitation(c) {
-    const meta = c.metadata || {};
-    return `
-      <div class="history-item">
-        <div class="history-header">
-          <strong>📄 Artículo</strong>
-        </div>
-
-        <div class="history-body">
-          <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
-          <p><strong>Año:</strong> ${meta.anio || ''}</p>
-          <p><strong>Título:</strong> ${meta.titulo || ''}</p>
-          <p><strong>Revista:</strong> ${meta.revista || ''}</p>
-          <p><strong>Volumen:</strong> ${meta.volumen || ''}</p>
-          <p><strong>Número:</strong> ${meta.numero || ''}</p>
-          <p><strong>Páginas:</strong> ${meta.paginas || ''}</p>
-          ${meta.doi_url ? `<p><strong>DOI/URL:</strong> ${meta.doi_url}</p>` : ''}
-        </div>
-
-        <div class="history-reference">
-          ${renderMarkdown(c.citation_text)}
-        </div>
-      </div>
-      <div class="citation-meta">
-        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
-      </div>
-    `;
-  }
-
-  function renderWebCitation(c) {
-    const meta = c.metadata || {};
-    const url = (meta.url || '').trim();
-    return `
-      <div class="history-item">
-        <div class="history-header">
-          <strong>🌐 Sitio web</strong>
-        </div>
-
-        <div class="history-body">
-          <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
-          <p><strong>Fecha:</strong> ${meta.fecha || ''}</p>
-          <p><strong>Título:</strong> ${meta.titulo || ''}</p>
-          <p><strong>Sitio:</strong> ${meta.sitio || ''}</p>
-          ${url ? `<p><strong>URL:</strong> <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></p>` : ''}
-        </div>
-
-        <div class="history-reference">
-          ${renderMarkdown(c.citation_text)}
-        </div>
-      </div>
-      <div class="citation-meta">
-        <span class="meta-item"><strong>Guardado:</strong> ${formatDate(c.created_at)}</span>
-      </div>
-    `;
-  }
-
   // Para cada cita construir tarjeta según source_type (ia/book/article/web)
   container.innerHTML = data.map(c => {
     console.log('CITATION TYPE:', c.source_type);
