@@ -283,61 +283,35 @@ export function renderCitationDetail(c) {
 
 function exportToHTML(data) {
   if (!Array.isArray(data)) return;
-
   const documentTitle = 'Historial de referencias';
   const userName = (document.getElementById('user-name') || {}).textContent || 'Usuario';
   const generatedAt = formatDateForPrint(new Date().toISOString());
 
+  // Reutilizar las mismas clases utilizadas en la aplicación para asegurar
+  // que la apariencia sea consistente. Incluimos una versión reducida de los
+  // estilos relevantes aquí para que el HTML exportado sea independiente.
   const styles = `
-    body { font-family: Georgia, "Times New Roman", serif; line-height: 1.6; margin: 40px; color: #222; background: #fff; }
-    h1 { text-align: center; margin-bottom: 40px; }
-    .metadata { text-align: center; margin-bottom: 30px; color: #555; }
-    .citation { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #ccc; font-style: normal; }
-    .meta { font-size: 0.9em; color: #555; margin-top: 10px; }
-    .label { font-weight: bold; }
-    .block { margin-top: 10px; margin-bottom: 10px; }
-    em { font-style: italic; }
-    strong { font-weight: bold; }
-    a { color: #1a0dab; word-break: break-all; }
-    .reference { font-style: normal; margin-bottom: 12px; }
-    hr.footer { margin-top: 40px; border: 0; border-top: 1px solid #ddd; }
-    p.footer { font-size: 0.8em; color: #777; }
+    body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;line-height:1.5;margin:20px;color:#111827;background:#fff}
+    h1{text-align:center;margin-bottom:20px}
+    .metadata{text-align:center;margin-bottom:20px;color:#555}
+    .citation-card{background:#f8f9fa;border:1px solid #e5e7eb;border-left:6px solid #235b4e;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+    .history-item{margin-bottom:0}
+    .history-header{margin-bottom:0.5rem}
+    .history-header strong{font-size:1rem}
+    .history-body{margin-bottom:0.6rem;color:#374151}
+    .history-reference{background:transparent;margin-top:0.5rem}
+    .citation-meta{font-size:0.9rem;color:#6b7280;margin-top:0.5rem}
+    .markdown-body{margin:0.35rem 0;color:#111827;font-size:0.95rem;line-height:1.5}
+    .historial-texto{border-left:2px solid #e5e7eb;padding-left:0.75rem;margin-top:0.35rem}
+    a{color:#1a0dab;word-break:break-all}
   `;
 
-  const bodyContent = data.map((c, index) => {
-    const sourceType = c.source_type || 'unknown';
-    const formattedDate = formatDateForPrint(c.created_at);
-    const citationHtml = renderMarkdown(c.citation_text || '');
-
-    if (sourceType === 'book') {
-      const meta = c.metadata || {};
-      return `
-        <div class="citation">
-          <div class="reference">${citationHtml}</div>
-          <div class="block"><span class="label">Autor:</span> ${escapeHtml(meta.autor || '')}</div>
-          <div class="block"><span class="label">Año:</span> ${escapeHtml(meta.anio || '')}</div>
-          <div class="block"><span class="label">Título:</span> <em>${escapeHtml(meta.titulo || '')}</em></div>
-          <div class="block"><span class="label">Editorial:</span> ${escapeHtml(meta.editorial || '')}</div>
-          ${meta.doi_url ? `<div class="block"><span class="label">DOI/URL:</span> <a href="${escapeHtml(meta.doi_url)}" target="_blank">${escapeHtml(meta.doi_url)}</a></div>` : ''}
-          <div class="meta">Fuente: libro | Guardado: ${escapeHtml(formattedDate)}</div>
-        </div>
-      `;
-    }
-
-    const modelDisplay = c.models?.name || c.model_name_custom || '—';
-    const promptHtml = renderMarkdown(c.prompt || '');
-    const responseHtml = renderMarkdown(c.llm_response || '');
-
-    return `
-      <div class="citation">
-        <div class="reference">${citationHtml}</div>
-        <div class="block"><span class="label">Tema:</span> ${escapeHtml(c.tema || '')}</div>
-        <div class="block"><span class="label">Prompt:</span> ${promptHtml}</div>
-        <div class="block"><span class="label">Respuesta:</span> ${responseHtml}</div>
-        <div class="meta">Modelo: <em>${escapeHtml(modelDisplay)}</em> | Guardado: ${escapeHtml(formattedDate)}</div>
-      </div>
-    `;
-  }).join('\n');
+  // Usar la misma función de renderizado que la UI para cada cita
+  const bodyContent = data.map(c => `
+    <article class="citation-card">
+      ${renderCitationDetail(c)}
+    </article>
+  `).join('\n');
 
   const html = `<!DOCTYPE html>
 <html lang="es">

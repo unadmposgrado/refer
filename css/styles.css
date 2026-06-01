@@ -599,11 +599,13 @@ input:focus, textarea:focus, select:focus{
 
 /* spacing for historial entries */
 .citation-card {
-  background: #fff;
+  background: #f8f9fa; /* fondo tenue para diferenciar del blanco del layout */
   border: 1px solid var(--border);
+  border-left: 6px solid #235b4e; /* bisel izquierdo institucional */
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem; /* separa cada entrada */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06); /* sombra muy sutil */
 }
 .citation-extra {
   font-size: 0.9rem;
