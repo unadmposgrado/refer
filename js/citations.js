@@ -17,14 +17,25 @@ function normalizeMetadata(meta) {
     autor: meta.autor || meta.author || '',
     titulo: meta.titulo || meta.title || '',
     anio: meta.anio || meta.year || '',
+    mes: meta.mes || meta.month || '',
+    dia: meta.dia || meta.day || '',
     editorial: meta.editorial || '',
     revista: meta.revista || '',
-    volumen: meta.volumen || '',
+    volumen: meta.volumen || meta.issue || '',
     numero: meta.numero || meta.issue || '',
     paginas: meta.paginas || meta.pages || '',
     doi_url: meta.doi_url || meta.url || '',
     sitio: meta.sitio || meta.website || '',
-    fecha: meta.fecha || meta.date || ''
+    url: meta.url || '',
+    fecha: meta.fecha || meta.date || '',
+    author_type: meta.author_type || meta.authorType || '',
+    autores: Array.isArray(meta.autores) ? meta.autores : (Array.isArray(meta.authors) ? meta.authors : []),
+    organization: meta.organization || meta.organizacion || '',
+    has_recovery_date: meta.has_recovery_date || meta.hasRecoveryDate || false,
+    recovery_day: meta.recovery_day || meta.recoveryDay || '',
+    recovery_month: meta.recovery_month || meta.recoveryMonth || '',
+    recovery_year: meta.recovery_year || meta.recoveryYear || '',
+    in_text_citation: meta.in_text_citation || meta.inTextCitation || ''
   };
 }
 

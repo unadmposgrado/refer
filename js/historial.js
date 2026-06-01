@@ -123,6 +123,19 @@ function getAutor(meta = {}) {
   return '';
 }
 
+function formatWebMetadataDate(meta = {}) {
+  if (!meta || typeof meta !== 'object') return '';
+  if (meta.fecha) return escapeHtml(meta.fecha);
+
+  const year = String(meta.anio || '').trim();
+  const month = String(meta.mes || '').trim();
+  const day = String(meta.dia || '').trim();
+  if (!year) return '';
+  if (day && month) return `${escapeHtml(day)} de ${escapeHtml(month)} de ${escapeHtml(year)}`;
+  if (month) return `${escapeHtml(month)} de ${escapeHtml(year)}`;
+  return escapeHtml(year);
+}
+
 function formatDateForPrint(dateStr) {
   if (!dateStr) return '';
   try {
@@ -187,6 +200,7 @@ function renderBookCitation(c) {
       </div>
 
       <div class="history-reference">
+        <p><strong>Referencia generada:</strong></p>
         ${renderMarkdown(c.citation_text)}
       </div>
     </div>
@@ -216,6 +230,7 @@ function renderArticleCitation(c) {
       </div>
 
       <div class="history-reference">
+        <p><strong>Referencia generada:</strong></p>
         ${renderMarkdown(c.citation_text)}
       </div>
     </div>
@@ -228,6 +243,7 @@ function renderArticleCitation(c) {
 function renderWebCitation(c) {
   const meta = c.metadata || {};
   const url = (meta.url || '').trim();
+  const fechaTexto = formatWebMetadataDate(meta);
   return `
     <div class="history-item">
       <div class="history-header">
@@ -236,13 +252,14 @@ function renderWebCitation(c) {
 
       <div class="history-body">
         <p><strong>Autor:</strong> ${getAutor(meta) || 'Sin autor'}</p>
-        <p><strong>Fecha:</strong> ${meta.fecha || ''}</p>
+        <p><strong>Fecha:</strong> ${fechaTexto || ''}</p>
         <p><strong>Título:</strong> ${meta.titulo || ''}</p>
         <p><strong>Sitio:</strong> ${meta.sitio || ''}</p>
         ${url ? `<p><strong>URL:</strong> <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></p>` : ''}
       </div>
 
       <div class="history-reference">
+        <p><strong>Referencia generada:</strong></p>
         ${renderMarkdown(c.citation_text)}
       </div>
     </div>
