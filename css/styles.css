@@ -312,6 +312,83 @@ input:focus, textarea:focus, select:focus{
   flex: 1 1 150px;
 }
 
+/* nueva estructura de métricas resumen en historial global */
+.metricas-resumen {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metricas-principales {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 0.6rem;
+  border-radius: 8px;
+}
+
+.metrica-inline {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.metrica-inline strong {
+  font-weight: 600;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.metrica-inline span {
+  word-break: break-word;
+  margin: 0;
+}
+
+.metrica-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 0.6rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metrica-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #374151;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.metrica-value {
+  font-size: 1.1rem;
+  color: #111827;
+  word-break: break-word;
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .metricas-resumen {
+    grid-template-columns: 1fr;
+  }
+
+  .metrica-inline {
+    flex-wrap: wrap;
+  }
+
+  .metrica-inline strong {
+    white-space: normal;
+  }
+}
+
 /* estilos comunes para tablas administrativas */
 .admin-table {
   width: 100%;

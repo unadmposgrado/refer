@@ -274,6 +274,11 @@ async function renderGlobalCitationHistory() {
   // función auxiliar para determinar el nombre del programa
   // Incluye la excepción para académicos de universidad con división CAI
   function getProgramName(citation) {
+    // CORRECCIÓN: Validación defensiva contra objetos inválidos
+    if (!citation || typeof citation !== 'object') {
+      return 'Desconocido';
+    }
+    
     const profile = citation.profiles || {};
     const programaInstitucional = profile.programs?.nombre || null;
     
@@ -286,6 +291,7 @@ async function renderGlobalCitationHistory() {
     }
     
     // Fallback al programa institucional o desconocido
+    // CORRECCIÓN: Excluir valores nulos, indefinidos, vacíos y 'Desconocido' para filtro estricto
     return programaInstitucional || 'Desconocido';
   }
 
@@ -447,7 +453,9 @@ async function renderGlobalCitationHistory() {
   let currentPage = 1;
   let totalRows = 0;       // número total de registros (tras aplicar filtros locales)
 
-  // el arreglo `citations` contendrá únicamente la página actual
+  // el arreglo `allCitations` contendrá todos los registros de la página actual
+  let allCitations = [];
+  // `citations` contiene solo la página actual después de filtrado y paginación
   let citations = [];
   // `filtered` seguirá usándose para modificaciones locales tras aplicar
   // filtros sobre los datos cargados en la página.
@@ -492,9 +500,11 @@ async function renderGlobalCitationHistory() {
       query = query.or(`profiles.full_name.ilike.%${filters.user}%,profiles.email.ilike.%${filters.user}%`);
     }
     // B) Filtro de programa
-    if (filters.program) {
-      query = query.eq('profiles.programs.nombre', filters.program);
-    }
+    // CORRECCIÓN Problema 1: Eliminado de Supabase, se aplicará como filtrado LOCAL
+    // Razón: getProgramName() tiene lógica especial (ej: excepción CAI) que no es directamente queryable en BD
+    // if (filters.program) {
+    //   query = query.eq('profiles.programs.nombre', filters.program);
+    // }
     // C) Filtro de modelo
     if (filters.model) {
       const typeMapReverse = {
@@ -505,12 +515,14 @@ async function renderGlobalCitationHistory() {
       };
       const sourceType = typeMapReverse[filters.model];
       if (sourceType === 'ia') {
-        query = query.or(`models.name.ilike.%${filters.model}%,model_name_custom.ilike.%${filters.model}%`);
+        // CORRECCIÓN: Usar * en lugar de % para patrones ILIKE en Supabase/PostgREST
+        query = query.or(`models.name.ilike.*${filters.model}*,model_name_custom.ilike.*${filters.model}*`);
       } else if (sourceType) {
         query = query.eq('source_type', sourceType);
       } else {
         // asumir es modelo de ia
-        query = query.or(`models.name.ilike.%${filters.model}%,model_name_custom.ilike.%${filters.model}%`);
+        // CORRECCIÓN: Usar * en lugar de % para patrones ILIKE en Supabase/PostgREST
+        query = query.or(`models.name.ilike.*${filters.model}*,model_name_custom.ilike.*${filters.model}*`);
       }
     }
     // D) Filtro de fecha
@@ -527,16 +539,42 @@ async function renderGlobalCitationHistory() {
 
     if (error) {
       console.error('Error fetching global citation history:', error);
-      container.innerHTML = '<p>Error cargando historial global de IA.</p>';
+      // CORRECCIÓN Problema 2: No borrar todo el módulo, solo mostrar error en la tabla
+      allCitations = [];
       citations = [];
       filtered = [];
       totalRows = 0;
+      renderSummary();
+      const containerTbl = document.getElementById('history-table-container');
+      if (containerTbl) {
+        containerTbl.innerHTML = '<p>Error al cargar registros. Intente nuevamente.</p>';
+      }
+      renderPagination();
       return;
     }
 
-    citations = data || [];
-    filtered = [...citations];
-    totalRows = count || citations.length;
+    allCitations = data || [];
+    
+    // CORRECCIÓN Problema 1: Aplicar filtrados LOCALES adicionales para garantizar filtros estrictos
+    filtered = allCitations.filter(c => {
+      // Filtro local por programa: garantizar coincidencia exacta con getProgramName
+      if (filters.program) {
+        const programName = getProgramName(c);
+        if (programName !== filters.program) {
+          return false;
+        }
+      }
+      
+      // Validación defensiva: asegurar que datos críticos existen
+      if (!c || typeof c !== 'object') {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    citations = filtered;
+    totalRows = count || allCitations.length;
 
     renderSummary();
     renderTablePage();
@@ -588,6 +626,7 @@ async function renderGlobalCitationHistory() {
   // render de filtros
   function renderFilters() {
     // programas y modelos únicos para opciones
+    // CORRECCIÓN: usar `allCitations` para asegurar todas las opciones disponibles
     const programs = new Set();
     const models = new Set();
 
@@ -598,7 +637,7 @@ async function renderGlobalCitationHistory() {
       web: 'Web'
     };
 
-    citations.forEach(c => {
+    allCitations.forEach(c => {
       const progName = getProgramName(c);
       if (progName !== 'Desconocido') {
         programs.add(progName);
@@ -673,15 +712,26 @@ async function renderGlobalCitationHistory() {
 
   // render de resumen (resume sobre los datos actualmente filtrados/paginados)
   function renderSummary() {
-    const sum = computeSummary(filtered);
+    const sum = computeSummary(citations);  // CORRECCIÓN: usar `citations` que contiene la página filtrada
     const scont = document.getElementById('history-summary');
     if (!scont) return;
     scont.innerHTML = `
-      <div class="dashboard-cards">
-        <div class="card"><strong>Total citas:</strong> ${totalRows}</div>
-        <div class="card"><strong>Usuarios activos:</strong> ${sum.uniqueUsers}</div>
-        <div class="card"><strong>Tipo de referencia o modelo de IA más usado:</strong> ${sum.mostUsedTypeOrModel}</div>
-        <div class="card"><strong>Programa más activo:</strong> ${sum.topProgram}</div>
+      <div class="metricas-resumen">
+        <div class="metricas-principales">
+          <div class="metrica-inline">
+            <strong>Total citas:</strong> <span>${totalRows}</span>
+          </div>
+          <div class="metrica-inline">
+            <strong>Usuarios activos:</strong> <span>${sum.uniqueUsers}</span>
+          </div>
+          <div class="metrica-inline">
+            <strong>Programa más activo:</strong> <span>${sum.topProgram}</span>
+          </div>
+        </div>
+        <div class="metrica-card">
+          <div class="metrica-label">Tipo de referencia o modelo de IA más usado</div>
+          <div class="metrica-value">${sum.mostUsedTypeOrModel}</div>
+        </div>
       </div>
     `;
   }
@@ -690,7 +740,7 @@ async function renderGlobalCitationHistory() {
   function renderTablePage() {
     const containerTbl = document.getElementById('history-table-container');
     if (!containerTbl) return;
-    const pageItems = filtered;
+    const pageItems = citations;  // CORRECCIÓN: usar `citations` que contiene la página filtrada
     if (pageItems.length === 0) {
       containerTbl.innerHTML = '<p>No hay registros.</p>';
       return;
@@ -749,8 +799,8 @@ async function renderGlobalCitationHistory() {
     containerTbl.querySelectorAll('.view-citation').forEach(btn => {
       btn.addEventListener('click', () => {
         const cid = btn.getAttribute('data-id');
-        // buscar en la página filtrada (o en la página completa si no hay filtros)
-        const citation = filtered.find(x=>String(x.id)===cid) || citations.find(x=>String(x.id)===cid);
+        // buscar en la página filtrada (o en todos los registros si no hay filtros)
+        const citation = citations.find(x=>String(x.id)===cid) || allCitations.find(x=>String(x.id)===cid);
         if (citation) showCitationModal(citation);
       });
     });
