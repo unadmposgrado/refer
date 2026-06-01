@@ -275,6 +275,24 @@ async function renderGlobalCitationHistory() {
     document.body.removeChild(link);
   }
 
+  // función auxiliar para determinar el nombre del programa
+  // Incluye la excepción para académicos de universidad con división CAI
+  function getProgramName(citation) {
+    const profile = citation.profiles || {};
+    const programaInstitucional = profile.programs?.nombre || null;
+    
+    // Excepción: académico de universidad con división CAI
+    if (
+      profile.tipo_usuario === 'academico_universidad' &&
+      profile.division === 'Coordinación Académica y de Investigación (CAI)'
+    ) {
+      return 'CAI';
+    }
+    
+    // Fallback al programa institucional o desconocido
+    return programaInstitucional || 'Desconocido';
+  }
+
   // nueva función independiente que obtiene todo el historial desde Supabase
   async function exportarHistorialCompleto() {
     const safe = (v) => v ?? '';
@@ -451,7 +469,7 @@ async function renderGlobalCitationHistory() {
         model_id,
         model_name_custom,
         models(name),
-        profiles(full_name,email,programs(nombre, nivel, division))
+        profiles(full_name,email,tipo_usuario,division,programs(nombre, nivel, division))
       `, { count: 'exact' })
       .order('created_at', { ascending: false });
 
@@ -526,7 +544,7 @@ async function renderGlobalCitationHistory() {
       if (c.user_id) users.add(c.user_id);
       const m = c.models?.name || c.model_name_custom || 'Desconocido';
       modelCounts[m] = (modelCounts[m] || 0) + 1;
-      const prog = c.profiles?.programs?.nombre || 'Desconocido';
+      const prog = getProgramName(c);
       programCounts[prog] = (programCounts[prog] || 0) + 1;
     });
 
@@ -550,7 +568,10 @@ async function renderGlobalCitationHistory() {
     };
 
     citations.forEach(c => {
-      if (c.profiles?.programs?.nombre) programs.add(c.profiles.programs.nombre);
+      const progName = getProgramName(c);
+      if (progName !== 'Desconocido') {
+        programs.add(progName);
+      }
       const rawType = (c.source_type || '').toLowerCase();
 
       if (rawType === 'ia') {
@@ -646,7 +667,7 @@ async function renderGlobalCitationHistory() {
         minute: '2-digit'
       }) : '';
       const user = c.profiles?.full_name || c.profiles?.email || '';
-      const prog = c.profiles?.programs?.nombre || 'Desconocido';
+      const prog = getProgramName(c);
 
       const rawType = (c.source_type || '').toLowerCase();
 
@@ -723,12 +744,13 @@ async function renderGlobalCitationHistory() {
   function showCitationModal(c) {
     const modal = document.createElement('div');
     modal.className = 'history-modal-overlay';
+    const programDisplay = getProgramName(c);
     modal.innerHTML = `
       <div class="history-modal">
         <button class="close-modal">×</button>
         <h3>Detalle de cita</h3>
         <p><strong>Usuario:</strong> ${c.profiles?.full_name||c.profiles?.email||''}</p>
-        <p><strong>Programa:</strong> ${c.profiles?.programs?.nombre||'Desconocido'}</p>
+        <p><strong>Programa:</strong> ${programDisplay}</p>
         <p><strong>Modelo:</strong> ${c.models?.name||c.model_name_custom||'Desconocido'}</p>
         <p><strong>Tema:</strong> ${c.tema||''}</p>
         <p><strong>Prompt:</strong></p>

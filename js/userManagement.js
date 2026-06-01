@@ -17,6 +17,8 @@ export async function loadUsers() {
   email,
   role,
   program_id,
+  tipo_usuario,
+  division,
   programs(id, nombre, nivel, division)
 `);
   console.debug('[userManagement] loadUsers profiles', profiles, 'error', pErr);
@@ -65,6 +67,23 @@ export async function loadUsers() {
   });
 }
 
+// Función auxiliar para determinar el nombre del programa educativo
+// Incluye la excepción para académicos de universidad con división CAI
+function getProgramEducativo(usuario) {
+  const programaInstitucional = usuario.programs?.nombre || null;
+  
+  // Excepción: académico de universidad con división CAI
+  if (
+    usuario.tipo_usuario === 'academico_universidad' &&
+    usuario.division === 'Coordinación Académica y de Investigación (CAI)'
+  ) {
+    return 'Coordinación Académica y de Investigación';
+  }
+  
+  // Fallback al programa institucional o vacío
+  return programaInstitucional || '';
+}
+
 export function calculateUserMetrics(users) {
   const total = users.length;
   const normal = users.filter(u => u.role === 'user').length;
@@ -101,7 +120,7 @@ export function renderUsersTable(users) {
   tbody.innerHTML = users.map(u => `
     <tr data-user-id="${u.id}">
       <td>${u.full_name || ''}</td>
-      <td>${u.programs?.nombre || ''}</td>
+      <td>${getProgramEducativo(u)}</td>
       <td>${u.email || ''}</td>
       <td>
         <select class="roleSelect">
