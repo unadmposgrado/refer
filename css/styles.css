@@ -327,6 +327,9 @@ input:focus, textarea:focus, select:focus{
 .admin-table thead th {
   text-align: center;
 }
+.admin-table td.text-center {
+  text-align: center;
+}
 .admin-table tbody tr:nth-child(odd) {
   background-color: #f9fafb;
 }

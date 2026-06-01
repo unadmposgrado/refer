@@ -18,6 +18,17 @@ const MODEL_COLORS = {
   qwen: '#5f3de5'
 };
 
+const NON_IA_MODEL_ICONS = {
+  book: '📘',
+  article: '📄',
+  web: '🌐',
+  thesis: '🎓',
+  tesis: '🎓',
+  informe: '📑',
+  documento: '📃',
+  default: '📚'
+};
+
 function getModelColor(modelName) {
   const name = (modelName || '').toLowerCase().trim();
   if (!name) return '#000000';
@@ -27,6 +38,11 @@ function getModelColor(modelName) {
   }
 
   return '#000000';
+}
+
+function getNonIAModelIcon(rawType) {
+  const typeKey = (rawType || '').toLowerCase().trim();
+  return NON_IA_MODEL_ICONS[typeKey] || NON_IA_MODEL_ICONS.default;
 }
 
 async function renderAdminDashboard() {
@@ -283,12 +299,28 @@ async function renderGlobalCitationHistory() {
       externo: 'Usuario externo'
     };
 
+    // Mapeo de source_type a tipos de referencia legibles
+    const sourceTypeMap = {
+      ia: 'Modelo de IA',
+      book: 'Libro',
+      article: 'Artículo',
+      web: 'Sitio Web',
+      thesis: 'Tesis',
+      tesis: 'Tesis',
+      informe: 'Informe',
+      reporte: 'Reporte',
+      documento: 'Documento'
+    };
+
     try {
       // consulta independiente para traer todo el historial enriquecido
+      // IMPORTANTE: Incluir source_type y citation_text para nueva estructura CSV
       const { data, error } = await supabase
         .from('citations')
         .select(`
           created_at,
+          source_type,
+          citation_text,
           tema,
           prompt,
           llm_response,
@@ -296,14 +328,10 @@ async function renderGlobalCitationHistory() {
           profiles(
             full_name,
             tipo_usuario,
-            matricula,
             nivel_educativo,
             division,
-            metadata,
             programs(
-              nombre,
-              nivel,
-              division
+              nombre
             )
           ),
           models(name)
@@ -317,24 +345,21 @@ async function renderGlobalCitationHistory() {
       }
 
       const records = data || [];
-      // columnas exactas solicitadas
+      // Columnas en el orden exacto solicitado
       const headers = [
         'Fecha',
         'Hora',
         'Usuario',
         'Tipo de usuario',
-        'Matrícula',
         'Nivel educativo',
         'División o coordinación',
-        'Programa institucional',
-        'Programa externo',
-        'Tipo externo',
-        'Institución externa',
-        'Disciplina externa',
+        'Programa Institucional',
+        'Tipo de referencia',
+        'Referencia generada',
         'Modelo',
         'Tema',
         'Prompt',
-        'Respuesta del LLM'
+        'Respuesta'
       ];
 
       const rows = records.map(c => {
@@ -345,43 +370,48 @@ async function renderGlobalCitationHistory() {
           : '';
 
         const profile = c.profiles || {};
-        const metadata = profile.metadata || {};
+        const sourceType = (c.source_type || 'ia').toLowerCase();
 
         const usuario = safe(profile.full_name);
         const tipoUsuarioSlug = profile.tipo_usuario || '';
         const tipoUsuario = tipoUsuarioMap[tipoUsuarioSlug] || tipoUsuarioSlug || '';
-        const matricula = safe(profile.matricula);
         const nivelEducativo = safe(profile.nivel_educativo);
         const division = safe(profile.division);
-
         const programaInstitucional = safe(profile.programs?.nombre);
-        const programaExterno = safe(metadata.programa_educativo);
-        const tipoExterno = safe(metadata.tipo_externo);
-        const institucionExterna = safe(metadata.institucion);
-        const disciplinaExterna = safe(metadata.disciplina);
 
+        // Tipo de referencia: mapear source_type a nombre legible
+        const tipoReferencia = sourceTypeMap[sourceType] || sourceType || '';
+
+        // Referencia generada: usar citation_text
+        const referenciaGenerada = safe(c.citation_text);
+
+        // Campos que solo se llenan para referencias de IA
         let modelo = '';
-        if (c.models?.name) modelo = c.models.name;
-        else if (c.model_name_custom) modelo = c.model_name_custom;
-        else modelo = 'No especificado';
+        let tema = '';
+        let prompt = '';
+        let respuesta = '';
 
-        const tema = safe(c.tema);
-        const prompt = safe(c.prompt);
-        const respuesta = safe(c.llm_response);
+        if (sourceType === 'ia') {
+          // Solo para referencias de IA: llenar modelo, tema, prompt, respuesta
+          if (c.models?.name) modelo = c.models.name;
+          else if (c.model_name_custom) modelo = c.model_name_custom;
+
+          tema = safe(c.tema);
+          prompt = safe(c.prompt);
+          respuesta = safe(c.llm_response);
+        }
+        // Para otros tipos (book, article, web, etc.): deixar vacío
 
         return [
           fecha,
           hora,
           usuario,
           tipoUsuario,
-          matricula,
           nivelEducativo,
           division,
           programaInstitucional,
-          programaExterno,
-          tipoExterno,
-          institucionExterna,
-          disciplinaExterna,
+          tipoReferencia,
+          referenciaGenerada,
           modelo,
           tema,
           prompt,
@@ -515,24 +545,42 @@ async function renderGlobalCitationHistory() {
   await loadPage();
 
   // helpers para métricas
+  function getReferenceTypeLabel(rawType) {
+    const normalized = (rawType || '').toLowerCase().trim();
+    const typeMap = {
+      book: 'Libro',
+      article: 'Artículo',
+      web: 'Sitio Web',
+      thesis: 'Tesis',
+      tesis: 'Tesis',
+      informe: 'Informe'
+    };
+    if (typeMap[normalized]) return typeMap[normalized];
+    if (normalized) return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    return 'Desconocido';
+  }
+
   function computeSummary(records) {
     const total = records.length;
     const users = new Set();
-    const modelCounts = {};
+    const usageCounts = {};
     const programCounts = {};
 
     records.forEach(c => {
       if (c.user_id) users.add(c.user_id);
-      const m = c.models?.name || c.model_name_custom || 'Desconocido';
-      modelCounts[m] = (modelCounts[m] || 0) + 1;
+      const rawType = (c.source_type || '').toLowerCase().trim();
+      const usageKey = rawType === 'ia'
+        ? c.models?.name || c.model_name_custom || 'Desconocido'
+        : getReferenceTypeLabel(rawType);
+      usageCounts[usageKey] = (usageCounts[usageKey] || 0) + 1;
       const prog = getProgramName(c);
       programCounts[prog] = (programCounts[prog] || 0) + 1;
     });
 
-    const mostUsedModel = Object.entries(modelCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+    const mostUsedTypeOrModel = Object.entries(usageCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
     const topProgram = Object.entries(programCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
 
-    return { total, uniqueUsers: users.size, mostUsedModel, topProgram };
+    return { total, uniqueUsers: users.size, mostUsedTypeOrModel, topProgram };
   }
 
   // render de filtros
@@ -622,7 +670,7 @@ async function renderGlobalCitationHistory() {
       <div class="dashboard-cards">
         <div class="card"><strong>Total citas:</strong> ${totalRows}</div>
         <div class="card"><strong>Usuarios activos:</strong> ${sum.uniqueUsers}</div>
-        <div class="card"><strong>Modelo más usado:</strong> ${sum.mostUsedModel}</div>
+        <div class="card"><strong>Tipo de referencia o modelo de IA más usado:</strong> ${sum.mostUsedTypeOrModel}</div>
         <div class="card"><strong>Programa más activo:</strong> ${sum.topProgram}</div>
       </div>
     `;
@@ -660,7 +708,7 @@ async function renderGlobalCitationHistory() {
       };
       const tipo = typeMap[rawType] || rawType || 'Desconocido';
 
-      let m = 'N/A';
+      let m = getNonIAModelIcon(rawType);
       if (rawType === 'ia') {
         m = c.models?.name || c.model_name_custom || 'Desconocido';
       }
@@ -670,16 +718,16 @@ async function renderGlobalCitationHistory() {
         : '#000000';
 
       html += `<tr>
-        <td>${date}</td>
+        <td class="text-center">${date}</td>
         <td>${user}</td>
         <td>${prog}</td>
-        <td>${tipo}</td>
-        <td>
+        <td class="text-center">${tipo}</td>
+        <td class="text-center">
           <span style="color: ${modelColor}; font-weight: 600;">
             ${m}
           </span>
         </td>
-        <td>
+        <td class="text-center">
           <button class="view-citation" data-id="${c.id}">Ver</button>
         </td>
       </tr>`;
