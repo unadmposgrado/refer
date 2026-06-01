@@ -136,17 +136,35 @@ function formatDateForPrint(dateStr) {
 // Funciones de render por tipo (reutilizables desde otros módulos)
 function renderIACitation(c) {
   const modelDisplay = c.models?.name || c.model_name_custom || '—';
+  const temaHtml = c.tema ? `<p><strong>Tema:</strong> ${escapeHtml(c.tema)}</p>` : '';
+  const promptHtml = c.prompt ? `
+        <div><strong>Prompt:</strong></div>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
+      ` : '';
+  const responseHtml = c.llm_response ? `
+        <div><strong>Respuesta:</strong></div>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
+      ` : '';
+
   return `
-    <div class="citation-text markdown-body">${renderMarkdown(c.citation_text)}</div>
-    <div class="citation-extra">
-      <strong>Tema:</strong> ${c.tema || ''}
-      <div><strong>Prompt:</strong></div>
-      <div class="historial-texto markdown-body">${renderMarkdown(c.prompt)}</div>
-      <div><strong>Respuesta:</strong></div>
-      <div class="historial-texto markdown-body">${renderMarkdown(c.llm_response)}</div>
+    <div class="history-item">
+      <div class="history-header">
+        <strong>🤖 Modelo de Inteligencia Artificial</strong>
+      </div>
+
+      <div class="history-body">
+        <p><strong>Modelo:</strong> ${escapeHtml(modelDisplay)}</p>
+        ${temaHtml}
+        ${promptHtml}
+        ${responseHtml}
+      </div>
+
+      <div class="history-reference">
+        <p><strong>Referencia generada:</strong></p>
+        ${renderMarkdown(c.citation_text)}
+      </div>
     </div>
     <div class="citation-meta">
-      <span class="meta-item"><strong>Modelo:</strong> ${modelDisplay}</span>
       <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
     </div>
   `;
