@@ -687,7 +687,7 @@ async function renderGlobalCitationHistory() {
       containerTbl.innerHTML = '<p>No hay registros.</p>';
       return;
     }
-    let html = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Programa</th><th>Tipo</th><th>Modelo</th><th>Detalle</th></tr></thead><tbody>';
+    let html = '<table class="admin-table"><thead><tr><th class="history-date-col">Fecha</th><th>Usuario</th><th>Programa</th><th>Tipo</th><th>Modelo</th><th>Detalle</th></tr></thead><tbody>';
     pageItems.forEach(c => {
       // format fecha+hora sin segundos para el historial global
       const date = c.created_at ? new Date(c.created_at).toLocaleString('es-ES', {
@@ -720,7 +720,7 @@ async function renderGlobalCitationHistory() {
         : '#000000';
 
       html += `<tr>
-        <td class="text-center">${date}</td>
+        <td class="history-date-cell text-center">${date}</td>
         <td>${user}</td>
         <td>${prog}</td>
         <td class="text-center">${tipo}</td>

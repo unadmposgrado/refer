@@ -327,6 +327,11 @@ input:focus, textarea:focus, select:focus{
 .admin-table thead th {
   text-align: center;
 }
+.admin-table .history-date-col,
+.admin-table .history-date-cell {
+  min-width: 150px;
+  white-space: nowrap;
+}
 .admin-table td.text-center {
   text-align: center;
 }
