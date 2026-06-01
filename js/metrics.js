@@ -58,7 +58,7 @@ export async function renderMetrics() {
       </div>
       <div class="admin-module-body">
         <section id="global-history-module">
-          <div id="history-filters"></div>
+          <div id="history-filters" class="historial-filtros-grid"></div>
           <div id="history-summary"></div>
           <div id="history-table-container"></div>
           <div id="history-pagination"></div>

@@ -617,19 +617,27 @@ async function renderGlobalCitationHistory() {
     const modelOpts = Array.from(models).sort();
 
     const html = `
-      <label for="filter-user">Buscar usuario</label>
-      <input id="filter-user" type="text" placeholder="Buscar usuario">
-      <label for="filter-program">Filtrar por programa</label>
-      <select id="filter-program"><option value="">Todos</option>${programOpts.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
-      <label for="filter-model">Filtrar por modelo</label>
-      <select id="filter-model"><option value="">Todos</option>${modelOpts.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
-      <label for="filter-date">Filtrar por fecha</label>
-      <select id="filter-date">
-        <option value="">Todas las fechas</option>
-        <option value="7">Últimos 7 días</option>
-        <option value="30">Últimos 30 días</option>
-        <option value="365">Último año</option>
-      </select>
+      <div class="control-group">
+        <label for="filter-user">Buscar usuario</label>
+        <input id="filter-user" type="text" placeholder="Buscar usuario">
+      </div>
+      <div class="control-group">
+        <label for="filter-program">Filtrar por programa</label>
+        <select id="filter-program"><option value="">Todos</option>${programOpts.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+      </div>
+      <div class="control-group">
+        <label for="filter-model">Filtrar por modelo</label>
+        <select id="filter-model"><option value="">Todos</option>${modelOpts.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+      </div>
+      <div class="control-group">
+        <label for="filter-date">Filtrar por fecha</label>
+        <select id="filter-date">
+          <option value="">Todas las fechas</option>
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="365">Último año</option>
+        </select>
+      </div>
     `;
     const filt = document.getElementById('history-filters');
     if (filt) filt.innerHTML = html;

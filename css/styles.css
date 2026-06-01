@@ -548,16 +548,35 @@ input:focus, textarea:focus, select:focus{
 
 /* filtros de historial global: separa los elementos y añade margen inferior */
 #history-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: start;
+}
+#history-filters .control-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem; /* espacio entre input y selects */
-  margin-bottom: 1rem; /* distancia respecto a las métricas */
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+#history-filters label {
+  font-weight: 600;
 }
 #history-filters input,
 #history-filters select {
-  /* permitir que los controles no se agrupen demasiado en pantallas pequeñas */
-  flex: 1 1 auto;
-  min-width: 120px;
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  #history-filters {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* separar un poco las métricas que aparecen debajo de los filtros */
