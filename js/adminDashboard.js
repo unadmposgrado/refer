@@ -5,48 +5,28 @@ import { requireAuth, getUserRole } from './auth.js';
 import { supabase } from './supabaseClient.js';
 import { renderMarkdown, renderCitationDetail } from './historial.js';
 
-function getModelColor(modelName, organization) {
-  const name = (modelName || '').toLowerCase();
-  const org = (organization || '').toLowerCase();
+const MODEL_COLORS = {
+  chatgpt: '#000000',
+  claude: '#d07458',
+  consensus: '#5dceaa',
+  copilot: '#bc4db0',
+  deepseek: '#416afd',
+  gemini: '#f2c93c',
+  grok: '#191a1b',
+  llama: '#191a1b',
+  perplexity: '#000000',
+  qwen: '#5f3de5'
+};
 
-  // OpenAI (ChatGPT / GPT)
-  if (org.includes('openai') || name.includes('gpt')) return '#0B8F6C';
+function getModelColor(modelName) {
+  const name = (modelName || '').toLowerCase().trim();
+  if (!name) return '#000000';
 
-  // Google (Gemini)
-  if (org.includes('google') || name.includes('gemini')) return '#4285F4';
+  for (const key of Object.keys(MODEL_COLORS)) {
+    if (name.includes(key)) return MODEL_COLORS[key];
+  }
 
-  // Anthropic (Claude)
-  if (org.includes('anthropic') || name.includes('claude')) return '#D97706';
-
-  // Microsoft (Copilot)
-  if (org.includes('microsoft') || name.includes('copilot')) return '#2563EB';
-
-  // Meta (Llama)
-  if (org.includes('meta') || name.includes('llama')) return '#3B82F6';
-
-  // Mistral
-  if (org.includes('mistral')) return '#F97316';
-
-  // xAI (Grok)
-  if (org.includes('xai') || name.includes('grok')) return '#111827';
-
-  // Perplexity
-  if (name.includes('perplexity')) return '#22C55E';
-
-  // Cohere
-  if (org.includes('cohere')) return '#FB7185';
-
-  // DeepSeek
-  if (name.includes('deepseek')) return '#14B8A6';
-
-  // Qwen (Alibaba)
-  if (name.includes('qwen')) return '#EAB308';
-
-  // Yi (01.AI)
-  if (name.includes('yi')) return '#EA580C';
-
-  // fallback
-  return '#6B7280';
+  return '#000000';
 }
 
 async function renderAdminDashboard() {
@@ -169,7 +149,7 @@ async function renderAdminDashboard() {
         // profiles ahora incluye el email directamente; full_name se usa como respaldo
         const email = c.profiles?.email || c.profiles?.full_name || '';
         const modelDisplay = c.models?.name || c.model_name_custom || '—';
-        const modelColor = getModelColor(modelDisplay, c.models?.organization);
+        const modelColor = getModelColor(modelDisplay);
         const consulta = c.consulta_fecha ? new Date(c.consulta_fecha).toLocaleDateString('es-ES') : '';
         const created = c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : '';
         let text = c.citation_text || '';
@@ -686,8 +666,8 @@ async function renderGlobalCitationHistory() {
       }
 
       const modelColor = rawType === 'ia'
-        ? getModelColor(m, c.models?.organization)
-        : 'inherit';
+        ? getModelColor(m)
+        : '#000000';
 
       html += `<tr>
         <td>${date}</td>

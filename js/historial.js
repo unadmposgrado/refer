@@ -295,14 +295,28 @@ function exportToHTML(data) {
     h1{text-align:center;margin-bottom:20px}
     .metadata{text-align:center;margin-bottom:20px;color:#555}
     .citation-card{background:#f8f9fa;border:1px solid #e5e7eb;border-left:6px solid #235b4e;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+    .citation-card p,
+    .history-body p,
+    .history-reference p,
+    .citation-meta,
+    .markdown-body p,
+    .markdown-body ul,
+    .markdown-body ol{line-height:1.4}
     .history-item{margin-bottom:0}
-    .history-header{margin-bottom:0.5rem}
+    .history-header{margin-bottom:0.45rem}
     .history-header strong{font-size:1rem}
-    .history-body{margin-bottom:0.6rem;color:#374151}
-    .history-reference{background:transparent;margin-top:0.5rem}
-    .citation-meta{font-size:0.9rem;color:#6b7280;margin-top:0.5rem}
-    .markdown-body{margin:0.35rem 0;color:#111827;font-size:0.95rem;line-height:1.5}
-    .historial-texto{border-left:2px solid #e5e7eb;padding-left:0.75rem;margin-top:0.35rem}
+    .history-body{margin-bottom:0.55rem;color:#374151}
+    .history-reference{background:transparent;margin-top:0.4rem}
+    .citation-meta{font-size:0.9rem;color:#6b7280;margin-top:0.4rem}
+    .markdown-body{margin:0.25rem 0;color:#111827;font-size:0.95rem;line-height:1.4}
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3,
+    .markdown-body h4{margin:0.55rem 0 0.3rem}
+    .markdown-body p{margin:0.25rem 0}
+    .markdown-body ul,
+    .markdown-body ol{margin:0.4rem 0 0.4rem 1.2rem;padding-left:0.4rem}
+    .historial-texto{border-left:2px solid #e5e7eb;padding-left:0.75rem;margin-top:0.25rem}
     a{color:#1a0dab;word-break:break-all}
   `;
 
