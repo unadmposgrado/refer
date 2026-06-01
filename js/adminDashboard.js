@@ -351,7 +351,6 @@ async function renderGlobalCitationHistory() {
         'Hora',
         'Usuario',
         'Tipo de usuario',
-        'Nivel educativo',
         'División o coordinación',
         'Programa Institucional',
         'Tipo de referencia',
@@ -375,9 +374,13 @@ async function renderGlobalCitationHistory() {
         const usuario = safe(profile.full_name);
         const tipoUsuarioSlug = profile.tipo_usuario || '';
         const tipoUsuario = tipoUsuarioMap[tipoUsuarioSlug] || tipoUsuarioSlug || '';
-        const nivelEducativo = safe(profile.nivel_educativo);
         const division = safe(profile.division);
-        const programaInstitucional = safe(profile.programs?.nombre);
+        
+        // Programa Institucional: mostrar "No aplica" para usuarios de CAI
+        let programaInstitucional = safe(profile.programs?.nombre);
+        if (division === 'Coordinación Académica y de Investigación (CAI)') {
+          programaInstitucional = 'No aplica';
+        }
 
         // Tipo de referencia: mapear source_type a nombre legible
         const tipoReferencia = sourceTypeMap[sourceType] || sourceType || '';
@@ -407,7 +410,6 @@ async function renderGlobalCitationHistory() {
           hora,
           usuario,
           tipoUsuario,
-          nivelEducativo,
           division,
           programaInstitucional,
           tipoReferencia,
