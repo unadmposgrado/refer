@@ -514,15 +514,63 @@ async function renderGlobalCitationHistory() {
         'Web': 'web'
       };
       const sourceType = typeMapReverse[filters.model];
+      const modelPattern = String(filters.model || '').trim();
+
       if (sourceType === 'ia') {
-        // CORRECCIÓN: Usar * en lugar de % para patrones ILIKE en Supabase/PostgREST
-        query = query.or(`models.name.ilike.*${filters.model}*,model_name_custom.ilike.*${filters.model}*`);
+        // Intentar buscar por nombre en la tabla `models` para obtener model_id(s)
+        try {
+          const { data: matchedModels, error: modelErr } = await supabase
+            .from('models')
+            .select('id,name')
+            .ilike('name', `*${modelPattern}*`);
+
+          if (modelErr) {
+            console.debug('[historial-debug] error buscando en table models:', modelErr);
+          }
+
+          if (matchedModels && matchedModels.length) {
+            const ids = matchedModels.map(m => m.id).filter(Boolean);
+            if (ids.length) {
+              // Filtrar por model_id IN (...) o por model_name_custom si se usó nombre custom
+              // Usamos .or para unir ambas posibilidades
+              query = query.or(`model_id.in.(${ids.join(',')}),model_name_custom.ilike.*${modelPattern}*`);
+            } else {
+              // fallback a buscar por model_name_custom
+              query = query.or(`model_name_custom.ilike.*${modelPattern}*`);
+            }
+          } else {
+            // No hay coincidencias en tabla models → filtrar por campo custom
+            query = query.or(`model_name_custom.ilike.*${modelPattern}*`);
+          }
+        } catch (e) {
+          console.debug('[historial-debug] exception buscando modelos:', e);
+          // fallback conservador
+          query = query.or(`model_name_custom.ilike.*${modelPattern}*`);
+        }
       } else if (sourceType) {
         query = query.eq('source_type', sourceType);
       } else {
-        // asumir es modelo de ia
-        // CORRECCIÓN: Usar * en lugar de % para patrones ILIKE en Supabase/PostgREST
-        query = query.or(`models.name.ilike.*${filters.model}*,model_name_custom.ilike.*${filters.model}*`);
+        // asumir es modelo de ia (mismo flujo que arriba)
+        try {
+          const { data: matchedModels, error: modelErr } = await supabase
+            .from('models')
+            .select('id,name')
+            .ilike('name', `*${modelPattern}*`);
+
+          if (matchedModels && matchedModels.length) {
+            const ids = matchedModels.map(m => m.id).filter(Boolean);
+            if (ids.length) {
+              query = query.or(`model_id.in.(${ids.join(',')}),model_name_custom.ilike.*${modelPattern}*`);
+            } else {
+              query = query.or(`model_name_custom.ilike.*${modelPattern}*`);
+            }
+          } else {
+            query = query.or(`model_name_custom.ilike.*${modelPattern}*`);
+          }
+        } catch (e) {
+          console.debug('[historial-debug] exception buscando modelos (fallback):', e);
+          query = query.or(`model_name_custom.ilike.*${modelPattern}*`);
+        }
       }
     }
     // D) Filtro de fecha
@@ -554,7 +602,25 @@ async function renderGlobalCitationHistory() {
     }
 
     allCitations = data || [];
-    
+
+    // DEBUG: mostrar estructura de algunos registros para diagnosticar filtro por modelo
+    try {
+      console.debug('[historial-debug] filtros actuales:', JSON.stringify(filters));
+      console.debug('[historial-debug] registros obtenidos (total):', allCitations.length);
+      const preview = (allCitations || []).slice(0, 20).map(c => ({
+        id: c.id,
+        source_type: c.source_type,
+        model_id: c.model_id,
+        model_name_custom: c.model_name_custom,
+        models_name: c.models?.name,
+        profiles_program: c.profiles?.programs?.nombre,
+        profiles_division: c.profiles?.division
+      }));
+      console.table(preview);
+    } catch (e) {
+      console.debug('[historial-debug] error mostrando preview:', e);
+    }
+
     // CORRECCIÓN Problema 1: Aplicar filtrados LOCALES adicionales para garantizar filtros estrictos
     filtered = allCitations.filter(c => {
       // Filtro local por programa: garantizar coincidencia exacta con getProgramName
@@ -575,6 +641,32 @@ async function renderGlobalCitationHistory() {
     
     citations = filtered;
     totalRows = count || allCitations.length;
+
+    // DEBUG: si hay filtro de modelo, mostrar comparación inicial entre seleccionado y campos encontrados
+    try {
+      if (filters.model) {
+        const comparisons = (allCitations || []).slice(0, 50).map(c => {
+          const modelFromModels = c.models?.name;
+          const modelCustom = c.model_name_custom;
+          const modelId = c.model_id;
+          const normalizedSelected = String(filters.model || '').trim().toLowerCase();
+          const normalizedModels = String(modelFromModels || modelCustom || '').trim().toLowerCase();
+          return {
+            id: c.id,
+            selected: filters.model,
+            modelFromModels,
+            modelCustom,
+            modelId,
+            match_exact: normalizedModels === normalizedSelected,
+            match_includes: normalizedModels.includes(normalizedSelected)
+          };
+        });
+        console.debug('[historial-debug] comparaciones modelo (primeros 50):');
+        console.table(comparisons);
+      }
+    } catch (e) {
+      console.debug('[historial-debug] error comparando modelos:', e);
+    }
 
     renderSummary();
     renderTablePage();
