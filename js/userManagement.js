@@ -5,6 +5,9 @@ import { supabase } from './supabaseClient.js';
 
 // cache global
 let allUsers = [];
+let filteredUsers = [];
+let currentUserPage = 1;
+const USER_PAGE_SIZE = 10;
 
 export async function loadUsers() {
   // obtenemos campos directamente de profiles (incluye ahora email de forma nativa)
@@ -16,6 +19,7 @@ export async function loadUsers() {
   full_name,
   email,
   role,
+  created_at,
   program_id,
   tipo_usuario,
   division,
@@ -28,7 +32,7 @@ export async function loadUsers() {
 
   const { data: citations, error: cErr } = await supabase
     .from('citations')
-    .select('user_id, model_id, source_type, model_name_custom');
+    .select('user_id, model_id, source_type, model_name_custom, created_at');
   if (cErr) throw cErr;
 
   const { data: models, error: mErr } = await supabase
@@ -44,6 +48,13 @@ export async function loadUsers() {
   return (profiles || []).map(u => {
     const userCits = (citations || []).filter(c => c.user_id === u.id);
     const citationCount = userCits.length;
+    const lastUsedAt = userCits.reduce((latest, citation) => {
+      if (!citation.created_at) return latest;
+      if (!latest || new Date(citation.created_at) > new Date(latest)) {
+        return citation.created_at;
+      }
+      return latest;
+    }, null);
     // contar modelos IA por nombre y tipos de fuente por usuario
     const mcount = {}; // conteo por nombre de modelo IA
     const typeCount = {}; // conteo por source_type (libro, article, web, thesis, etc.)
@@ -92,9 +103,28 @@ export async function loadUsers() {
     return {
       ...u,
       citationCount,
+      lastUsedAt,
       topModel: topModel || '—'
     };
   });
+}
+
+function formatUserDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+
+  const dateLabel = date.toLocaleDateString('es-ES');
+  const timeLabel = date.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  return `${dateLabel}<br>${timeLabel} hrs.`;
+}
+
+function getProgramFilterValue(usuario) {
+  return getProgramEducativo(usuario) || 'Sin programa';
 }
 
 // Función auxiliar para determinar el nombre del programa educativo
@@ -159,6 +189,8 @@ export function renderUsersTable(users) {
         </select>
       </td>
       <td>${u.citationCount}</td>
+      <td>${formatUserDate(u.lastUsedAt)}</td>
+      <td>${formatUserDate(u.created_at)}</td>
       <td>${u.topModel}</td>
     </tr>
   `).join('');
@@ -173,9 +205,11 @@ export function renderUsersTable(users) {
   });
 }
 
-export function filterUsers() {
+export function filterUsers(resetPage = true) {
   const searchVal = document.getElementById('userSearch').value.toLowerCase();
   const roleVal = document.getElementById('roleFilter').value;
+  const programVal = document.getElementById('programFilter').value;
+  const sortVal = document.getElementById('sortFilter').value;
   let filtered = allUsers;
   if (searchVal) {
     filtered = filtered.filter(u => {
@@ -186,7 +220,82 @@ export function filterUsers() {
   if (roleVal && roleVal !== 'all') {
     filtered = filtered.filter(u => u.role === roleVal);
   }
-  renderUsersTable(filtered);
+  if (programVal && programVal !== 'all') {
+    filtered = filtered.filter(u => getProgramFilterValue(u) === programVal);
+  }
+
+  filteredUsers = [...filtered].sort((first, second) => {
+    if (sortVal === 'citations-desc' || sortVal === 'citations-asc') {
+      const difference = first.citationCount - second.citationCount;
+      return sortVal === 'citations-desc' ? -difference : difference;
+    }
+
+    if (sortVal === 'last-used-desc' || sortVal === 'last-used-asc') {
+      const firstDate = first.lastUsedAt ? new Date(first.lastUsedAt).getTime() : 0;
+      const secondDate = second.lastUsedAt ? new Date(second.lastUsedAt).getTime() : 0;
+      const difference = firstDate - secondDate;
+      return sortVal === 'last-used-desc' ? -difference : difference;
+    }
+
+    if (sortVal === 'registered-desc' || sortVal === 'registered-asc') {
+      const firstDate = first.created_at ? new Date(first.created_at).getTime() : 0;
+      const secondDate = second.created_at ? new Date(second.created_at).getTime() : 0;
+      const difference = firstDate - secondDate;
+      return sortVal === 'registered-desc' ? -difference : difference;
+    }
+
+    return (first.full_name || '').localeCompare(second.full_name || '', 'es', { sensitivity: 'base' });
+  });
+
+  if (resetPage) currentUserPage = 1;
+  renderCurrentUserPage();
+}
+
+function renderCurrentUserPage() {
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USER_PAGE_SIZE));
+  currentUserPage = Math.min(currentUserPage, totalPages);
+  const start = (currentUserPage - 1) * USER_PAGE_SIZE;
+  renderUsersTable(filteredUsers.slice(start, start + USER_PAGE_SIZE));
+  renderUserPagination(totalPages);
+}
+
+function renderUserPagination(totalPages) {
+  const pagination = document.getElementById('user-pagination');
+  if (!pagination) return;
+
+  pagination.innerHTML = `
+    <button id="user-prev-page" ${currentUserPage === 1 ? 'disabled' : ''}>Anterior</button>
+    <span>Página ${currentUserPage} de ${totalPages}</span>
+    <button id="user-next-page" ${currentUserPage === totalPages ? 'disabled' : ''}>Siguiente</button>
+  `;
+
+  document.getElementById('user-prev-page')?.addEventListener('click', () => {
+    if (currentUserPage > 1) {
+      currentUserPage--;
+      filterUsers(false);
+    }
+  });
+  document.getElementById('user-next-page')?.addEventListener('click', () => {
+    if (currentUserPage < totalPages) {
+      currentUserPage++;
+      filterUsers(false);
+    }
+  });
+}
+
+function populateProgramFilter() {
+  const programFilter = document.getElementById('programFilter');
+  if (!programFilter) return;
+
+  const programs = [...new Set(allUsers.map(getProgramFilterValue))]
+    .sort((first, second) => first.localeCompare(second, 'es', { sensitivity: 'base' }));
+  programFilter.innerHTML = '<option value="all">Todos los programas</option>';
+  programs.forEach(program => {
+    const option = document.createElement('option');
+    option.value = program;
+    option.textContent = program;
+    programFilter.appendChild(option);
+  });
 }
 
 export async function updateUserRole(userId, newRole) {
@@ -217,10 +326,13 @@ export async function initializeUserSection() {
     allUsers = await loadUsers();
     console.debug('[userManagement] allUsers after load', allUsers);
     calculateUserMetrics(allUsers);
-    renderUsersTable(allUsers);
+    populateProgramFilter();
+    filterUsers();
     const searchInput = document.getElementById('userSearch');
     const roleInput = document.getElementById('roleFilter');
-    [searchInput, roleInput].forEach(el => {
+    const programInput = document.getElementById('programFilter');
+    const sortInput = document.getElementById('sortFilter');
+    [searchInput, roleInput, programInput, sortInput].forEach(el => {
       if (el) {
         el.addEventListener('input', filterUsers);
         el.addEventListener('change', filterUsers);

@@ -21,13 +21,27 @@ export async function renderMetrics() {
         <div id="userManagement" style="display:none;">
           <div id="userMetrics"></div>
 
-          <div class="filters">
+          <div class="filters user-filters">
             <input type="text" id="userSearch" placeholder="Buscar por nombre o email">
-            <select id="roleFilter">
-              <option value="all">Todos</option>
-              <option value="user">Usuarios</option>
-              <option value="admin">Administradores</option>
-            </select>
+            <div class="user-filter-row">
+              <select id="roleFilter">
+                <option value="all">Todos</option>
+                <option value="user">Usuarios</option>
+                <option value="admin">Administradores</option>
+              </select>
+              <select id="programFilter" aria-label="Filtrar por programa educativo">
+                <option value="all">Todos los programas</option>
+              </select>
+              <select id="sortFilter" aria-label="Ordenar usuarios">
+                <option value="name-asc">Ordenar: nombre (A-Z)</option>
+                <option value="last-used-desc">Último uso: más reciente</option>
+                <option value="last-used-asc">Último uso: más antiguo</option>
+                <option value="registered-desc">Registro: más reciente</option>
+                <option value="registered-asc">Registro: más antiguo</option>
+                <option value="citations-desc">Más citas hechas</option>
+                <option value="citations-asc">Menos citas hechas</option>
+              </select>
+            </div>
           </div>
 
           <div class="table-responsive">
@@ -39,6 +53,8 @@ export async function renderMetrics() {
                   <th>Email</th>
                   <th>Rol</th>
                   <th>Citas</th>
+                  <th>Último uso</th>
+                  <th>Fecha de registro</th>
                   <th>Modelo más usado</th>
                 </tr>
               </thead>
@@ -46,6 +62,7 @@ export async function renderMetrics() {
             </table>
           </div>
           <p id="userTableMessage" style="display:none;"></p>
+          <div id="user-pagination" aria-label="Paginación de usuarios"></div>
         </div>
       </div>
     </div>

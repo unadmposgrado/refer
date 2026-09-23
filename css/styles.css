@@ -425,6 +425,17 @@ input:focus, textarea:focus, select:focus{
   text-align: left;
 }
 
+#usersTable th:nth-child(5),
+#usersTable td:nth-child(5),
+#usersTable th:nth-child(6),
+#usersTable td:nth-child(6),
+#usersTable th:nth-child(7),
+#usersTable td:nth-child(7),
+#usersTable th:nth-child(8),
+#usersTable td:nth-child(8) {
+  text-align: center;
+}
+
 /* selects dentro de tablas administrativas (por ej. rol) */
 .admin-table select {
   padding: .25rem .4rem;
@@ -480,6 +491,39 @@ input:focus, textarea:focus, select:focus{
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 1rem;
+}
+
+.user-filters {
+  display: block;
+}
+
+.user-filters > #userSearch {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.user-filter-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+.user-filter-row select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .user-filter-row {
+    flex-direction: column;
+    flex-wrap: wrap;
+  }
+
+  .user-filter-row select {
+    width: 100%;
+  }
 }
 
 /* clases de color según el modelo */

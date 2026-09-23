@@ -449,7 +449,7 @@ async function renderGlobalCitationHistory() {
 
   // --- paginación del lado del servidor --------------------------------
   // constants para control de páginas
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
   let currentPage = 1;
   let totalRows = 0;       // número total de registros (tras aplicar filtros locales)
 
