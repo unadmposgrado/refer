@@ -436,6 +436,11 @@ input:focus, textarea:focus, select:focus{
   text-align: center;
 }
 
+#usersTable th:nth-child(4),
+#usersTable td:nth-child(4) {
+  min-width: 120px;
+}
+
 /* selects dentro de tablas administrativas (por ej. rol) */
 .admin-table select {
   padding: .25rem .4rem;

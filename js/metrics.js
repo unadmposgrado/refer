@@ -36,7 +36,7 @@ export async function renderMetrics() {
                 <option value="name-asc">Ordenar: nombre (A-Z)</option>
                 <option value="last-used-desc">Último uso: más reciente</option>
                 <option value="last-used-asc">Último uso: más antiguo</option>
-                <option value="registered-desc">Registro: más reciente</option>
+                <option value="registered-desc" selected>Registro: más reciente</option>
                 <option value="registered-asc">Registro: más antiguo</option>
                 <option value="citations-desc">Más citas hechas</option>
                 <option value="citations-asc">Menos citas hechas</option>
