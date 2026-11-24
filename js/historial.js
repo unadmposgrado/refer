@@ -240,6 +240,35 @@ function renderArticleCitation(c) {
   `;
 }
 
+function renderTableFigureCitation(c) {
+  const meta = c.metadata || {};
+  const modelDisplay = c.models?.name || c.model_name_custom || '—';
+  const organization = c.organization_custom || meta.organization || '—';
+  const type = /^Tabla\s/i.test(c.citation_text || '') ? 'Tabla' : 'Figura';
+  return `
+    <div class="history-item">
+      <div class="history-header">
+        <strong>📊 ${type}</strong>
+      </div>
+
+      <div class="history-body">
+        <p><strong>Número:</strong> ${escapeHtml(meta.numero || '')}</p>
+        <p><strong>Título:</strong> ${escapeHtml(meta.titulo || '')}</p>
+        <p><strong>Herramienta de IA:</strong> ${escapeHtml(modelDisplay)}</p>
+        <p><strong>Desarrollador / organización:</strong> ${escapeHtml(organization)}</p>
+      </div>
+
+      <div class="history-reference">
+        <p><strong>Referencia generada:</strong></p>
+        ${renderMarkdown(c.citation_text)}
+      </div>
+    </div>
+    <div class="citation-meta">
+      <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
+    </div>
+  `;
+}
+
 function renderWebCitation(c) {
   const meta = c.metadata || {};
   const url = (meta.url || '').trim();
@@ -277,6 +306,7 @@ export function renderCitationDetail(c) {
   if (type === 'book') return renderBookCitation(c);
   if (type === 'article') return renderArticleCitation(c);
   if (type === 'web') return renderWebCitation(c);
+  if (type === 'table_figure') return renderTableFigureCitation(c);
   // fallback: usar formato IA como genérico
   return renderIACitation(c);
 }
@@ -436,6 +466,9 @@ async function renderHistorial() {
     }
     if (c.source_type === 'web') {
       return `<article class="citation-card">${renderWebCitation(c)}</article>`;
+    }
+    if (c.source_type === 'table_figure') {
+      return `<article class="citation-card">${renderTableFigureCitation(c)}</article>`;
     }
 
     return `<article class="citation-card">${renderIACitation(c)}</article>`;

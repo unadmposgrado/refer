@@ -2,6 +2,7 @@ import { initIA } from './types/ia.js';
 import { initLibro } from './types/libro.js';
 import { initArticulo } from './types/articulo.js';
 import { initWeb } from './types/web.js';
+import { initTablaFigura } from './types/tablaFigura.js';
 
 const container = document.getElementById('generatorContainer');
 const selector = document.getElementById('sourceTypeSelect');
@@ -20,6 +21,9 @@ function loadType(type) {
       break;
     case 'web':
       initWeb(container);
+      break;
+    case 'table-figure':
+      initTablaFigura(container);
       break;
     case 'ia':
     default:
