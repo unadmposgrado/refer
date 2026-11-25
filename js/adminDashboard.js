@@ -140,7 +140,7 @@ async function renderAdminDashboard() {
 
     const filterHtml = `
       <div id="filters">
-        <label for="filter-model">Filtrar por modelo</label>
+        <label for="filter-model">Filtrar por tipo</label>
         <select id="filter-model"><option value="">Todos</option>
           ${modelsArray.map(m=>`<option value="${m}">${m}</option>`).join('')}
         </select>
@@ -468,16 +468,12 @@ async function renderGlobalCitationHistory() {
     model: '',
     dateRange: ''
   };
+  let mostUsedTypeOrModel = '—';
+  let mostUsedCacheKey = null;
+  let mostUsedCacheValue = '—';
+  let mostUsedRequestId = 0;
 
-  // helper que solicita una página al servidor y actualiza el estado local
-  async function loadPage() {
-    const from = (currentPage - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    // construir query base
-    let query = supabase
-      .from('citations')
-      .select(`
+  async function buildHistoryQuery(selectFields = `
         id,
         created_at,
         source_type,
@@ -491,7 +487,11 @@ async function renderGlobalCitationHistory() {
         model_name_custom,
         models(name),
         profiles(full_name,email,tipo_usuario,division,programs(nombre, nivel, division))
-      `, { count: 'exact' })
+      `) {
+    // construir query base
+    let query = supabase
+      .from('citations')
+      .select(selectFields, { count: 'exact' })
       .order('created_at', { ascending: false });
 
     // aplicar filtros dinámicos
@@ -511,7 +511,9 @@ async function renderGlobalCitationHistory() {
         'IA': 'ia',
         'Libro': 'book',
         'Artículo': 'article',
-        'Web': 'web'
+        'Web': 'web',
+        ai_declaration: 'ai_declaration',
+        table_figure: 'table_figure'
       };
       const sourceType = typeMapReverse[filters.model];
       const modelPattern = String(filters.model || '').trim();
@@ -580,10 +582,16 @@ async function renderGlobalCitationHistory() {
       query = query.gte('created_at', threshold.toISOString());
     }
 
-    // aplicar paginación
-    query = query.range(from, to);
+    return { query };
+  }
 
-    const { data, error, count } = await query;
+  // helper que solicita una página al servidor y actualiza el estado local
+  async function loadPage() {
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { query } = await buildHistoryQuery();
+    const { data, error, count } = await query.range(from, to);
 
     if (error) {
       console.error('Error fetching global citation history:', error);
@@ -592,6 +600,7 @@ async function renderGlobalCitationHistory() {
       citations = [];
       filtered = [];
       totalRows = 0;
+      mostUsedTypeOrModel = 'No disponible';
       renderSummary();
       const containerTbl = document.getElementById('history-table-container');
       if (containerTbl) {
@@ -671,6 +680,7 @@ async function renderGlobalCitationHistory() {
     renderSummary();
     renderTablePage();
     renderPagination();
+    updateMostUsedSummary();
   }
 
   // cargar la primera página inmediatamente
@@ -680,6 +690,7 @@ async function renderGlobalCitationHistory() {
   function getReferenceTypeLabel(rawType) {
     const normalized = (rawType || '').toLowerCase().trim();
     const typeMap = {
+      ai_declaration: 'Uso de IA',
       book: 'Libro',
       article: 'Artículo',
       web: 'Sitio Web',
@@ -693,26 +704,92 @@ async function renderGlobalCitationHistory() {
   }
 
   function computeSummary(records) {
-    const total = records.length;
     const users = new Set();
-    const usageCounts = {};
     const programCounts = {};
 
     records.forEach(c => {
       if (c.user_id) users.add(c.user_id);
-      const rawType = (c.source_type || '').toLowerCase().trim();
-      const usageKey = rawType === 'ia'
-        ? c.models?.name || c.model_name_custom || 'Desconocido'
-        : getReferenceTypeLabel(rawType);
-      usageCounts[usageKey] = (usageCounts[usageKey] || 0) + 1;
       const prog = getProgramName(c);
       programCounts[prog] = (programCounts[prog] || 0) + 1;
     });
 
-    const mostUsedTypeOrModel = Object.entries(usageCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
     const topProgram = Object.entries(programCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
 
-    return { total, uniqueUsers: users.size, mostUsedTypeOrModel, topProgram };
+    return { uniqueUsers: users.size, topProgram };
+  }
+
+  async function updateMostUsedSummary() {
+    const filterKey = JSON.stringify(filters);
+    const requestId = ++mostUsedRequestId;
+    if (filterKey === mostUsedCacheKey) {
+      mostUsedTypeOrModel = mostUsedCacheValue;
+      renderSummary();
+      return;
+    }
+
+    mostUsedTypeOrModel = 'Calculando...';
+    renderSummary();
+
+    try {
+      const usageCounts = new Map();
+      const batchSize = 1000;
+      let offset = 0;
+
+      while (true) {
+        const { query } = await buildHistoryQuery(`
+          source_type,
+          model_name_custom,
+          models(name),
+          profiles(full_name,email,tipo_usuario,division,programs(nombre, nivel, division))
+        `);
+        const { data, error, count } = await query.range(offset, offset + batchSize - 1);
+        if (error) {
+          throw error;
+        }
+
+        const batch = data || [];
+        batch.forEach(c => {
+          if (filters.program && getProgramName(c) !== filters.program) {
+            return;
+          }
+
+          const rawType = (c.source_type || '').toLowerCase().trim();
+          const usageKey = rawType === 'ia'
+            ? c.models?.name || c.model_name_custom || 'Desconocido'
+            : getReferenceTypeLabel(rawType);
+          usageCounts.set(usageKey, (usageCounts.get(usageKey) || 0) + 1);
+        });
+
+        offset += batch.length;
+        if (
+          batch.length === 0 ||
+          (count !== null && offset >= count) ||
+          (count === null && batch.length < batchSize)
+        ) {
+          break;
+        }
+      }
+
+      const mostUsed = Array.from(usageCounts.entries())
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+      if (requestId !== mostUsedRequestId || filterKey !== JSON.stringify(filters)) {
+        return;
+      }
+
+      mostUsedCacheKey = filterKey;
+      mostUsedCacheValue = mostUsed;
+      mostUsedTypeOrModel = mostUsed;
+    } catch (error) {
+      console.error('Error calculating most used type or model:', error);
+      if (requestId !== mostUsedRequestId || filterKey !== JSON.stringify(filters)) {
+        return;
+      }
+      mostUsedTypeOrModel = 'No disponible';
+    }
+
+    if (requestId === mostUsedRequestId && filterKey === JSON.stringify(filters)) {
+      renderSummary();
+    }
   }
 
   // render de filtros
@@ -720,13 +797,17 @@ async function renderGlobalCitationHistory() {
     // programas y modelos únicos para opciones
     // CORRECCIÓN: usar `allCitations` para asegurar todas las opciones disponibles
     const programs = new Set();
-    const models = new Set();
+    const models = new Map();
 
     const typeMap = {
       ia: 'IA',
       book: 'Libro',
       article: 'Artículo',
       web: 'Web'
+    };
+    const typeLabelMap = {
+      ai_declaration: 'Uso de IA',
+      table_figure: 'Tabla o figura'
     };
 
     allCitations.forEach(c => {
@@ -738,14 +819,15 @@ async function renderGlobalCitationHistory() {
 
       if (rawType === 'ia') {
         const m = c.models?.name || c.model_name_custom || 'Desconocido';
-        models.add(m);
+        models.set(m, m);
       } else {
         const tipo = typeMap[rawType] || rawType || 'Otro';
-        models.add(tipo);
+        models.set(tipo, typeLabelMap[rawType] || tipo);
       }
     });
     const programOpts = Array.from(programs).sort();
-    const modelOpts = Array.from(models).sort();
+    const modelOpts = Array.from(models, ([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
 
     const html = `
       <div class="control-group">
@@ -757,8 +839,8 @@ async function renderGlobalCitationHistory() {
         <select id="filter-program"><option value="">Todos</option>${programOpts.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
       </div>
       <div class="control-group">
-        <label for="filter-model">Filtrar por modelo</label>
-        <select id="filter-model"><option value="">Todos</option>${modelOpts.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+        <label for="filter-model">Filtrar por tipo</label>
+        <select id="filter-model"><option value="">Todos</option>${modelOpts.map(({value, label})=>`<option value="${value}">${label}</option>`).join('')}</select>
       </div>
       <div class="control-group">
         <label for="filter-date">Filtrar por fecha</label>
@@ -802,7 +884,7 @@ async function renderGlobalCitationHistory() {
 
 
 
-  // render de resumen (resume sobre los datos actualmente filtrados/paginados)
+  // Render de métricas de la página actual y del tipo/modelo más usado en todos los resultados filtrados.
   function renderSummary() {
     const sum = computeSummary(citations);  // CORRECCIÓN: usar `citations` que contiene la página filtrada
     const scont = document.getElementById('history-summary');
@@ -822,7 +904,7 @@ async function renderGlobalCitationHistory() {
         </div>
         <div class="metrica-card">
           <div class="metrica-label">Tipo de referencia o modelo de IA más usado</div>
-          <div class="metrica-value">${sum.mostUsedTypeOrModel}</div>
+          <div class="metrica-value">${mostUsedTypeOrModel}</div>
         </div>
       </div>
     `;
@@ -854,6 +936,7 @@ async function renderGlobalCitationHistory() {
 
       const typeMap = {
         ia: 'IA',
+        ai_declaration: 'Uso de IA',
         book: 'Libro',
         article: 'Artículo',
         web: 'Web',
