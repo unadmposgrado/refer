@@ -856,7 +856,8 @@ async function renderGlobalCitationHistory() {
         ia: 'IA',
         book: 'Libro',
         article: 'Artículo',
-        web: 'Web'
+        web: 'Web',
+        table_figure: /^Tabla\s/i.test(c.citation_text || '') ? 'Tabla' : 'Figura'
       };
       const tipo = typeMap[rawType] || rawType || 'Desconocido';
 
