@@ -8,6 +8,18 @@ import { saveCitation } from '../../../js/citations.js';
 // cache local para evitar múltiples consultas a la misma fila y para
 // facilitar la traducción nombre→id que usa el autocompletado por URL
 const modelCache = {}; // { [id]: {name, organization, url} }
+export const catalogoModelosIA = {
+  ChatGPT: { organizacion: 'OpenAI', url: 'https://chatgpt.com' },
+  Gemini: { organizacion: 'Google DeepMind', url: 'https://gemini.google.com' },
+  Claude: { organizacion: 'Anthropic', url: 'https://www.anthropic.com/claude' },
+  Copilot: { organizacion: 'Microsoft', url: 'https://copilot.microsoft.com' },
+  LLaMA: { organizacion: 'Meta AI', url: 'https://ai.meta.com/llama' },
+  Qwen: { organizacion: 'Alibaba Cloud', url: 'https://qwenlm.ai' },
+  DeepSeek: { organizacion: 'DeepSeek AI', url: 'https://www.deepseek.com' },
+  Grok: { organizacion: 'xAI', url: 'https://x.ai' },
+  Perplexity: { organizacion: 'Perplexity AI', url: 'https://www.perplexity.ai' },
+  Consensus: { organizacion: 'Consensus', url: 'https://consensus.app' }
+};
 
 // iniciamos el listener una sola vez para toda la aplicación
 initAuthListener();
@@ -65,19 +77,6 @@ export function initIA(container) {
       console.error('Excepción al cargar modelos:', err);
     }
   }
-
-  const catalogoModelosIA = {
-    ChatGPT: { organizacion: 'OpenAI', url: 'https://chatgpt.com' },
-    Gemini: { organizacion: 'Google DeepMind', url: 'https://gemini.google.com' },
-    Claude: { organizacion: 'Anthropic', url: 'https://www.anthropic.com/claude' },
-    Copilot: { organizacion: 'Microsoft', url: 'https://copilot.microsoft.com' },
-    LLaMA: { organizacion: 'Meta AI', url: 'https://ai.meta.com/llama' },
-    Qwen: { organizacion: 'Alibaba Cloud', url: 'https://qwenlm.ai' },
-    DeepSeek: { organizacion: 'DeepSeek AI', url: 'https://www.deepseek.com' },
-    Grok: { organizacion: 'xAI', url: 'https://x.ai' },
-    Perplexity: { organizacion: 'Perplexity AI', url: 'https://www.perplexity.ai' },
-    Consensus: { organizacion: 'Consensus', url: 'https://consensus.app' }
-  };
 
   const catalogoIAporDominio = {
     'chatgpt.com': { modelo: 'ChatGPT', organizacion: 'OpenAI', url: 'https://chatgpt.com' },
@@ -433,11 +432,11 @@ export function initIA(container) {
       try{
         await navigator.clipboard.writeText(text);
         copyBtn.textContent = 'Copiado ✓';
-        setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
+        setTimeout(()=> copyBtn.textContent = copyBtn.dataset.copyLabel || 'Copiar referencia', 2000);
       }catch(e){
         console.error('No se pudo copiar', e);
         copyBtn.textContent = 'Error al copiar';
-        setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
+        setTimeout(()=> copyBtn.textContent = copyBtn.dataset.copyLabel || 'Copiar referencia', 2000);
       }
     });
   }

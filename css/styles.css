@@ -1036,6 +1036,16 @@ main.container {
   text-align: left;
 }
 
+.welcome-text.ai-declaration-warning {
+  background: #fff3cd;
+  border: 2px solid #dc3545;
+  border-radius: 8px;
+  color: #664d03;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  text-align: justify;
+}
+
 .welcome-text strong {
   color: var(--header-bg);
   font-size: 1.12rem;

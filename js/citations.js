@@ -100,6 +100,7 @@ export async function getUserCitations(userParam) {
       citation_text,
       source_type,
       metadata,
+      version,
       tema,
       prompt,
       llm_response,

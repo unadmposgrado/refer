@@ -183,6 +183,32 @@ function renderIACitation(c) {
   `;
 }
 
+function renderAIDeclaration(c) {
+  const tool = c.models?.name || c.model_name_custom || '—';
+  return `
+    <div class="history-item">
+      <div class="history-header">
+        <strong>🤖 Declaratoria de uso de IA</strong>
+      </div>
+      <div class="history-body">
+        <p><strong>Herramienta:</strong> ${escapeHtml(tool)}</p>
+        <p><strong>Desarrollador:</strong> ${escapeHtml(c.organization_custom || '—')}</p>
+        <p><strong>Modelo:</strong> ${escapeHtml(c.version || '—')}</p>
+        <p><strong>Fecha de utilización:</strong> ${escapeHtml(c.consulta_fecha || '—')}</p>
+        <p><strong>Actividad académica:</strong> ${escapeHtml(c.tema || '—')}</p>
+        <p><strong>Tipo de apoyo:</strong> ${escapeHtml(c.prompt || '—')}</p>
+      </div>
+      <div class="history-reference">
+        <p><strong>Prompt generado:</strong></p>
+        <div class="historial-texto markdown-body">${renderMarkdown(c.citation_text)}</div>
+      </div>
+    </div>
+    <div class="citation-meta">
+      <span class="meta-item"><strong>Guardado:</strong> ${formatDateForPrint(c.created_at)}</span>
+    </div>
+  `;
+}
+
 function renderBookCitation(c) {
   const meta = c.metadata || {};
   return `
@@ -302,6 +328,7 @@ function renderWebCitation(c) {
 export function renderCitationDetail(c) {
   if (!c || typeof c !== 'object') return '';
   const type = (c.source_type || '').toLowerCase();
+  if (type === 'ai_declaration') return renderAIDeclaration(c);
   if (type === 'ia') return renderIACitation(c);
   if (type === 'book') return renderBookCitation(c);
   if (type === 'article') return renderArticleCitation(c);
@@ -455,6 +482,9 @@ async function renderHistorial() {
   container.innerHTML = data.map(c => {
     console.log('CITATION TYPE:', c.source_type);
 
+    if (c.source_type === 'ai_declaration') {
+      return `<article class="citation-card">${renderAIDeclaration(c)}</article>`;
+    }
     if (c.source_type === 'ia') {
       return `<article class="citation-card">${renderIACitation(c)}</article>`;
     }
