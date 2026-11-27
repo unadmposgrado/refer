@@ -525,11 +525,11 @@ document.addEventListener('DOMContentLoaded', loadModels);
       try{
         await navigator.clipboard.writeText(text);
         copyBtn.textContent = 'Copiado ✓';
-        setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
+        setTimeout(()=> copyBtn.textContent = copyBtn.dataset.copyLabel || 'Copiar referencia', 2000);
       }catch(e){
         console.error('No se pudo copiar', e);
         copyBtn.textContent = 'Error al copiar';
-        setTimeout(()=> copyBtn.textContent = 'Copiar referencia', 2000);
+        setTimeout(()=> copyBtn.textContent = copyBtn.dataset.copyLabel || 'Copiar referencia', 2000);
       }
     });
   }

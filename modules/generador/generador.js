@@ -18,13 +18,15 @@ function loadType(type) {
   const isAIDeclaration = type === 'ai-declaration';
 
   if (copyBtn) {
-    copyBtn.textContent = isAIDeclaration ? 'Copiar prompt' : 'Copiar referencia';
+    copyBtn.textContent = isAIDeclaration ? 'Copiar ejemplo' : 'Copiar referencia';
     copyBtn.dataset.copyLabel = copyBtn.textContent;
   }
-  if (resultTitle) resultTitle.textContent = isAIDeclaration ? 'Prompt generado' : 'Referencia generada';
+  if (resultTitle) resultTitle.textContent = isAIDeclaration
+    ? 'Ejemplo de declaratoria de uso de IAGen'
+    : 'Referencia generada';
   if (reference) {
     reference.textContent = isAIDeclaration
-      ? 'Aquí se mostrará el prompt generado.'
+      ? 'Aquí se mostrará el ejemplo de declaratoria de uso de IAGen.'
       : 'Aquí se mostrará la referencia en formato APA.';
     reference.style.whiteSpace = isAIDeclaration ? 'pre-wrap' : '';
   }
