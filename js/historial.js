@@ -270,6 +270,7 @@ function renderTableFigureCitation(c) {
   const meta = c.metadata || {};
   const modelDisplay = c.models?.name || c.model_name_custom || '—';
   const organization = c.organization_custom || meta.organization || '—';
+  const hasAIAttribution = Boolean(c.model_id || c.model_name_custom || c.organization_custom || meta.organization);
   const type = /^Tabla\s/i.test(c.citation_text || '') ? 'Tabla' : 'Figura';
   return `
     <div class="history-item">
@@ -280,8 +281,10 @@ function renderTableFigureCitation(c) {
       <div class="history-body">
         <p><strong>Número:</strong> ${escapeHtml(meta.numero || '')}</p>
         <p><strong>Título:</strong> ${escapeHtml(meta.titulo || '')}</p>
-        <p><strong>Herramienta de IA:</strong> ${escapeHtml(modelDisplay)}</p>
-        <p><strong>Desarrollador / organización:</strong> ${escapeHtml(organization)}</p>
+        ${hasAIAttribution ? `
+          <p><strong>Herramienta de IA:</strong> ${escapeHtml(modelDisplay)}</p>
+          <p><strong>Desarrollador / organización:</strong> ${escapeHtml(organization)}</p>
+        ` : ''}
       </div>
 
       <div class="history-reference">

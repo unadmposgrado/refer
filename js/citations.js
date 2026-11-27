@@ -68,6 +68,15 @@ export async function saveCitation(data) {
     metadata: data.metadata ? normalizeMetadata(data.metadata) : null
   };
 
+  if (data.source_type === 'table_figure' && data.generative_ai === false) {
+    delete payload.model_id;
+    delete payload.model_name_custom;
+    delete payload.organization_custom;
+    if (payload.metadata) {
+      delete payload.metadata.organization;
+    }
+  }
+
   const { data: inserted, error } = await supabase
     .from('citations')
     .insert([payload]);

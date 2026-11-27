@@ -10,6 +10,15 @@ export function initTablaFigura(container) {
         <legend>Información de la tabla o figura</legend>
 
         <div class="form-row">
+          <label for="aiGenerated">¿La tabla o figura fue elaborada con ayuda de IAGen? <span class="required">*</span></label>
+          <select id="aiGenerated" name="aiGenerated" required>
+            <option value="">-- Selecciona una opción --</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <div class="form-row">
           <label for="tableFigureType">Tipo <span class="required">*</span></label>
           <select id="tableFigureType" name="tableFigureType" required>
             <option value="figura">Figura</option>
@@ -27,24 +36,26 @@ export function initTablaFigura(container) {
           <input type="text" id="tableFigureTitle" name="tableFigureTitle" required placeholder="Escribe el título">
         </div>
 
-        <div class="form-row">
-          <label for="aiModelSelect">Herramienta de IA <span class="required">*</span></label>
-          <div class="input-group">
-            <select id="aiModelSelect" name="aiModelSelect" required>
-              <option value="">-- Selecciona un modelo --</option>
-              <option value="otro">Otro modelo</option>
-            </select>
+        <div id="aiDetails" style="display:none;">
+          <div class="form-row">
+            <label for="aiModelSelect">Herramienta de IA <span class="required">*</span></label>
+            <div class="input-group">
+              <select id="aiModelSelect" name="aiModelSelect">
+                <option value="">-- Selecciona un modelo --</option>
+                <option value="otro">Otro modelo</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div class="form-row" id="customModelRow" style="display:none;">
-          <label for="customModelName">Nombre de la herramienta <span class="required">*</span></label>
-          <input type="text" id="customModelName" name="customModelName" placeholder="Escribe el nombre del modelo" disabled>
-        </div>
+          <div class="form-row" id="customModelRow" style="display:none;">
+            <label for="customModelName">Nombre de la herramienta <span class="required">*</span></label>
+            <input type="text" id="customModelName" name="customModelName" placeholder="Escribe el nombre del modelo" disabled>
+          </div>
 
-        <div class="form-row">
-          <label for="aiOrganization">Desarrollador / organización responsable <span class="required">*</span></label>
-          <input type="text" id="aiOrganization" name="aiOrganization" required placeholder="Ej. OpenAI">
+          <div class="form-row">
+            <label for="aiOrganization">Desarrollador / organización responsable <span class="required">*</span></label>
+            <input type="text" id="aiOrganization" name="aiOrganization" placeholder="Ej. OpenAI">
+          </div>
         </div>
       </fieldset>
 
@@ -57,18 +68,24 @@ export function initTablaFigura(container) {
 
   const form = container.querySelector('#tableFigureForm');
   const formError = container.querySelector('#formError');
+  const aiGeneratedSelect = container.querySelector('#aiGenerated');
+  const aiDetails = container.querySelector('#aiDetails');
   const modelSelect = container.querySelector('#aiModelSelect');
   const customModelRow = container.querySelector('#customModelRow');
   const customModelName = container.querySelector('#customModelName');
   const organizationInput = container.querySelector('#aiOrganization');
   const referenceEl = document.getElementById('reference');
   const models = new Map();
+  let modelsLoaded = false;
 
   function showError(message) {
     if (formError) formError.textContent = message;
   }
 
   async function loadModels() {
+    if (modelsLoaded) return;
+    modelsLoaded = true;
+
     try {
       const { data, error } = await supabase
         .from('models')
@@ -93,6 +110,26 @@ export function initTablaFigura(container) {
       showError('No se pudo cargar el listado de modelos. Puedes seleccionar “Otro modelo” y escribir los datos manualmente.');
     }
   }
+
+  aiGeneratedSelect.addEventListener('change', () => {
+    const usesAI = aiGeneratedSelect.value === 'si';
+    aiDetails.style.display = usesAI ? '' : 'none';
+    modelSelect.required = usesAI;
+    organizationInput.required = usesAI;
+
+    if (usesAI) {
+      loadModels();
+    } else {
+      modelSelect.value = '';
+      customModelRow.style.display = 'none';
+      customModelName.value = '';
+      customModelName.disabled = true;
+      customModelName.required = false;
+      organizationInput.value = '';
+    }
+
+    showError('');
+  });
 
   modelSelect.addEventListener('change', () => {
     const selectedModel = models.get(modelSelect.value);
@@ -121,19 +158,19 @@ export function initTablaFigura(container) {
     const type = String(formData.get('tableFigureType')).trim();
     const number = String(formData.get('tableFigureNumber')).trim();
     const title = String(formData.get('tableFigureTitle')).trim();
-    const organization = String(formData.get('aiOrganization')).trim();
+    const usesAI = formData.get('aiGenerated') === 'si';
+    const organization = usesAI ? String(formData.get('aiOrganization')).trim() : '';
     const selectedModelId = modelSelect.value;
-    const modelName = selectedModelId === 'otro'
+    const modelName = !usesAI ? '' : selectedModelId === 'otro'
       ? String(formData.get('customModelName')).trim()
       : (models.get(selectedModelId)?.name || '');
 
-    if (!modelName || !organization) {
+    if (usesAI && (!modelName || !organization)) {
       showError('Indica la herramienta de IA y su desarrollador u organización responsable.');
       return;
     }
 
     const typeLabel = type === 'tabla' ? 'Tabla' : 'Figura';
-    const generatedLabel = type === 'tabla' ? 'Tabla generada' : 'Imagen generada';
     const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -141,14 +178,16 @@ export function initTablaFigura(container) {
       '"': '&quot;',
       "'": '&#39;'
     }[character]));
-    const citation = `${typeLabel} ${escapeHtml(number)}. ${escapeHtml(title)}. ${generatedLabel} por ${escapeHtml(modelName)} desarrollado por ${escapeHtml(organization)}`;
+    const citation = usesAI
+      ? `${typeLabel} ${escapeHtml(number)}. ${escapeHtml(title)}. ${type === 'tabla' ? 'Tabla generada' : 'Imagen generada'} por ${escapeHtml(modelName)} desarrollado por ${escapeHtml(organization)}`
+      : `${typeLabel} ${escapeHtml(number)}. ${escapeHtml(title)}.`;
 
     if (referenceEl) {
       referenceEl.innerHTML = citation;
       referenceEl.focus();
     }
 
-    const selectedModel = models.get(selectedModelId);
+    const selectedModel = usesAI ? models.get(selectedModelId) : null;
     try {
       const { error } = await saveCitation({
         source_type: 'table_figure',
@@ -161,7 +200,8 @@ export function initTablaFigura(container) {
           titulo: title,
           numero: number,
           organization
-        }
+        },
+        generative_ai: usesAI
       });
 
       if (error) {
@@ -175,5 +215,4 @@ export function initTablaFigura(container) {
     }
   });
 
-  loadModels();
 }
