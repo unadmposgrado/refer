@@ -21,6 +21,18 @@ export function initAIDeclaration(container) {
   if (!container) return;
 
   container.innerHTML = `
+    <style>
+      #aiDeclarationForm .checkbox-list {
+        width: 100%;
+        min-width: 0;
+      }
+      @media (min-width: 640px) {
+        #aiDeclarationForm .declaration-row-label {
+          width: 220px;
+          flex: 0 0 220px;
+        }
+      }
+    </style>
     <p class="welcome-text ai-declaration-warning">
       La Inteligencia Artificial Generativa no puede ser considerada como autora, por lo que no sería correcto crear una referencia del contenido generado por la misma. Lo recomendable en este caso es declarar su uso.<br>
       Completa los datos para generar un ejemplo de declaratoria de uso de Inteligencia Artificial Generativa.
@@ -29,22 +41,23 @@ export function initAIDeclaration(container) {
       <fieldset>
         <legend>Datos para la declaratoria</legend>
         <div class="form-row">
-          <label for="aiSupportType">Tipos de apoyo <span class="required">*</span></label>
-          <select id="aiSupportType" name="supportType" multiple size="5" required>
-            ${supportTypes.map(type => `<option value="${type}">${type}</option>`).join('')}
-          </select>
-          <small class="form-help">Mantén presionada Ctrl (o Cmd en Mac) para seleccionar varias opciones.</small>
+          <strong id="aiSupportTypeLabel" class="declaration-row-label">Tipos de apoyo <span class="required">*</span></strong>
+          <div id="aiSupportType" class="checkbox-list" role="group" aria-labelledby="aiSupportTypeLabel">
+            ${supportTypes.map((type, index) => `
+              <label class="checkbox-option" style="display:flex;align-items:center;gap:.5rem;width:auto;margin:0;">
+                <input type="checkbox" name="supportType" value="${type}" id="supportType-${index}" style="width:auto;margin:0;">
+                <span>${type}</span>
+              </label>
+            `).join('')}
+          </div>
         </div>
         <div class="form-row" id="customSupportRow" style="display:none;">
           <label for="customSupport">Especifica el tipo de apoyo <span class="required">*</span></label>
           <input id="customSupport" name="customSupport" type="text" disabled>
         </div>
         <div class="form-row">
-          <label for="aiToolSelect">Herramientas de inteligencia artificial <span class="required">*</span></label>
-          <select id="aiToolSelect" name="tool" multiple size="6" required>
-            <option value="otro">Otra herramienta</option>
-          </select>
-          <small class="form-help">Mantén presionada Ctrl (o Cmd en Mac) para seleccionar varias opciones.</small>
+          <strong id="aiToolSelectLabel" class="declaration-row-label">Herramientas de inteligencia artificial <span class="required">*</span></strong>
+          <div id="aiToolSelect" class="checkbox-list" role="group" aria-labelledby="aiToolSelectLabel"></div>
         </div>
         <div id="toolDetails"></div>
         <div class="form-row">
@@ -64,25 +77,104 @@ export function initAIDeclaration(container) {
   const supportSelect = container.querySelector('#aiSupportType');
   const customSupportRow = container.querySelector('#customSupportRow');
   const customSupportInput = container.querySelector('#customSupport');
-  const toolSelect = container.querySelector('#aiToolSelect');
+  const toolList = container.querySelector('#aiToolSelect');
   const toolDetailsContainer = container.querySelector('#toolDetails');
   const activityInput = container.querySelector('#aiAcademicActivity');
   const resultEl = document.getElementById('reference');
   const models = new Map();
   const toolDetails = new Map();
 
+  function styleCheckboxList(list) {
+    Object.assign(list.style, {
+      display: 'grid',
+      gap: '.35rem',
+      flex: '1',
+      maxHeight: '180px',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      border: '1px solid var(--border)',
+      borderRadius: '6px',
+      padding: '.5rem',
+      boxSizing: 'border-box',
+      alignContent: 'start',
+      justifyItems: 'start',
+      textAlign: 'left',
+      direction: 'ltr',
+      scrollbarGutter: 'stable'
+    });
+  }
+
+  styleCheckboxList(supportSelect);
+  styleCheckboxList(toolList);
+
   function showError(message) {
     errorEl.textContent = message;
   }
 
-  function populateStaticTools() {
-    Object.keys(catalogoModelosIA).forEach(name => {
-      if (Array.from(toolSelect.options).some(option => option.value === name)) return;
-      const option = document.createElement('option');
-      option.value = name;
-      option.textContent = name;
-      toolSelect.insertBefore(option, toolSelect.querySelector('option[value="otro"]'));
+  function createCheckboxOption({ id, name, value, labelText }) {
+    const label = document.createElement('label');
+    label.className = 'checkbox-option';
+    label.htmlFor = id;
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '.5rem';
+    label.style.width = 'auto';
+    label.style.margin = '0';
+
+    const input = document.createElement('input');
+    input.id = id;
+    input.name = name;
+    input.type = 'checkbox';
+    input.value = value;
+    input.style.width = 'auto';
+    input.style.margin = '0';
+
+    const text = document.createElement('span');
+    text.textContent = labelText;
+    label.append(input, text);
+    return label;
+  }
+
+  function getSelectedSupportOptions() {
+    return Array.from(supportSelect.querySelectorAll('input[type="checkbox"]:checked'));
+  }
+
+  function getSelectedToolOptions() {
+    return Array.from(toolList.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(input => ({
+        value: input.value,
+        name: input.dataset.toolName
+      }));
+  }
+
+  function renderToolOptions(options) {
+    const selectedValues = new Set(getSelectedToolOptions().map(option => option.value));
+    toolList.replaceChildren();
+    options.forEach((option, index) => {
+      const checkbox = createCheckboxOption({
+        id: `aiToolOption-${index}`,
+        name: 'tool',
+        value: option.value,
+        labelText: option.name
+      });
+      const input = checkbox.querySelector('input');
+      input.dataset.toolName = option.name;
+      input.checked = selectedValues.has(option.value);
+      toolList.appendChild(checkbox);
     });
+
+    const otherOption = createCheckboxOption({
+      id: 'aiToolOption-other',
+      name: 'tool',
+      value: 'otro',
+      labelText: 'Otra herramienta'
+    });
+    otherOption.querySelector('input').checked = selectedValues.has('otro');
+    toolList.appendChild(otherOption);
+  }
+
+  function populateStaticTools() {
+    renderToolOptions(Object.keys(catalogoModelosIA).map(name => ({ value: name, name })));
   }
 
   function localDate(dateValue) {
@@ -106,7 +198,7 @@ export function initAIDeclaration(container) {
 
   function getToolName(option, customName = '') {
     if (option.value === 'otro') return customName || 'Otra herramienta';
-    return models.get(option.value)?.name || option.textContent.trim();
+    return models.get(option.value)?.name || option.name;
   }
 
   function createToolField({ index, key, field, labelText, type, value, required }) {
@@ -142,8 +234,7 @@ export function initAIDeclaration(container) {
   }
 
   function renderToolDetails() {
-    const selectedOptions = Array.from(toolSelect.selectedOptions)
-      .filter(option => option.value);
+    const selectedOptions = getSelectedToolOptions();
     toolDetailsContainer.replaceChildren();
 
     selectedOptions.forEach((option, index) => {
@@ -230,11 +321,9 @@ export function initAIDeclaration(container) {
 
       (data || []).forEach(model => {
         models.set(model.id, model);
-        const option = document.createElement('option');
-        option.value = model.id;
-        option.textContent = model.name;
-        toolSelect.insertBefore(option, toolSelect.querySelector('option[value="otro"]'));
       });
+      renderToolOptions((data || []).map(model => ({ value: model.id, name: model.name })));
+      renderToolDetails();
     } catch (error) {
       console.error('Excepción al cargar modelos de IA:', error);
       populateStaticTools();
@@ -243,7 +332,7 @@ export function initAIDeclaration(container) {
   }
 
   supportSelect.addEventListener('change', () => {
-    const isCustom = Array.from(supportSelect.selectedOptions)
+    const isCustom = getSelectedSupportOptions()
       .some(option => option.value === 'Otro');
     customSupportRow.style.display = isCustom ? '' : 'none';
     customSupportInput.disabled = !isCustom;
@@ -252,7 +341,7 @@ export function initAIDeclaration(container) {
     showError('');
   });
 
-  toolSelect.addEventListener('change', () => {
+  toolList.addEventListener('change', () => {
     renderToolDetails();
     showError('');
   });
@@ -263,17 +352,25 @@ export function initAIDeclaration(container) {
     event.preventDefault();
     showError('');
 
+    const selectedSupportOptions = getSelectedSupportOptions();
+    const selectedToolOptions = getSelectedToolOptions();
+    if (!selectedSupportOptions.length || !selectedToolOptions.length) {
+      showError(!selectedSupportOptions.length
+        ? 'Selecciona al menos un tipo de apoyo.'
+        : 'Selecciona al menos una herramienta de inteligencia artificial.');
+      return;
+    }
+
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
     }
 
-    const selectedSupportTypes = Array.from(supportSelect.selectedOptions)
+    const selectedSupportTypes = selectedSupportOptions
       .map(option => option.value === 'Otro' ? customSupportInput.value.trim() : option.value)
       .filter(Boolean)
       .map(lowercaseFirst);
-    const selectedTools = Array.from(toolSelect.selectedOptions)
-      .filter(option => option.value)
+    const selectedTools = selectedToolOptions
       .map(option => {
         const values = toolDetails.get(option.value);
         const name = getToolName(option, values.customTool.trim());
@@ -339,5 +436,6 @@ export function initAIDeclaration(container) {
     }
   });
 
+  renderToolOptions([]);
   loadModels();
 }
