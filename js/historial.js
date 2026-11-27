@@ -199,7 +199,7 @@ function renderAIDeclaration(c) {
         <p><strong>Tipo de apoyo:</strong> ${escapeHtml(c.prompt || '—')}</p>
       </div>
       <div class="history-reference">
-        <p><strong>Prompt generado:</strong></p>
+        <p><strong>Ejemplo de declaratoria de uso de IAGen:</strong></p>
         <div class="historial-texto markdown-body">${renderMarkdown(c.citation_text)}</div>
       </div>
     </div>

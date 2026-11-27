@@ -35,13 +35,13 @@ export function initAIDeclaration(container) {
     </style>
     <p class="welcome-text ai-declaration-warning">
       La Inteligencia Artificial Generativa no puede ser considerada como autora, por lo que no sería correcto crear una referencia del contenido generado por la misma. Lo recomendable en este caso es declarar su uso.<br>
-      Completa los datos para generar un ejemplo de declaratoria de uso de Inteligencia Artificial Generativa.
+      Completa los datos para generar un ejemplo de declaratoria de uso de Inteligencia Artificial Generativa. Posteriormente podrás copiar este ejemplo y ajustar su redacción de acuerdo con tus necesidades.
     </p>
     <form id="aiDeclarationForm" class="form" novalidate>
       <fieldset>
         <legend>Datos para la declaratoria</legend>
         <div class="form-row">
-          <strong id="aiSupportTypeLabel" class="declaration-row-label">Tipos de apoyo <span class="required">*</span></strong>
+          <strong id="aiSupportTypeLabel" class="declaration-row-label">Tipos de apoyo<span class="required">*</span></strong>
           <div id="aiSupportType" class="checkbox-list" role="group" aria-labelledby="aiSupportTypeLabel">
             ${supportTypes.map((type, index) => `
               <label class="checkbox-option" style="display:flex;align-items:center;gap:.5rem;width:auto;margin:0;">
@@ -52,16 +52,16 @@ export function initAIDeclaration(container) {
           </div>
         </div>
         <div class="form-row" id="customSupportRow" style="display:none;">
-          <label for="customSupport">Especifica el tipo de apoyo <span class="required">*</span></label>
+          <label for="customSupport">Especifica el tipo de apoyo<span class="required">*</span></label>
           <input id="customSupport" name="customSupport" type="text" disabled>
         </div>
         <div class="form-row">
-          <strong id="aiToolSelectLabel" class="declaration-row-label">Herramientas de inteligencia artificial <span class="required">*</span></strong>
+          <strong id="aiToolSelectLabel" class="declaration-row-label">Herramientas de inteligencia artificial<span class="required">*</span></strong>
           <div id="aiToolSelect" class="checkbox-list" role="group" aria-labelledby="aiToolSelectLabel"></div>
         </div>
         <div id="toolDetails"></div>
         <div class="form-row">
-          <label for="aiAcademicActivity">Tema o actividad académica <span class="required">*</span></label>
+          <label for="aiAcademicActivity">Tema o actividad académica<span class="required">*</span></label>
           <textarea id="aiAcademicActivity" name="activity" rows="5" required placeholder="Ej. El uso de la inteligencia artificial con integridad académica."></textarea>
         </div>
       </fieldset>
@@ -388,7 +388,7 @@ export function initAIDeclaration(container) {
       const modelText = tool.model ? ` (modelo ${tool.model})` : '';
       return `${tool.name}${modelText} de ${tool.developer} el ${localDate(tool.date)}`;
     });
-    const declarationText = `A lo largo de la elaboración del presente documento, se emplearon herramientas de Inteligencia Artificial Generativa como ${formatNaturalList(toolDescriptions)}, en calidad de recursos auxiliares. Estos sirvieron para ${formatNaturalList(selectedSupportTypes)}. El autor(a) del texto examinó, cotejó y corrigió todo el material elaborado o mediado por dichos modelos de lenguaje. Asimismo, comprobó las citas empleadas y asume la responsabilidad total sobre los razonamientos, los enfoques, la veracidad de los datos y el resultado definitivo de la publicación. En ningún caso la inteligencia artificial generativa fungió como creadora del texto ni se le otorgó el estatus de referente o autoridad en el ámbito académico.`;
+    const declarationText = `A lo largo de la elaboración del presente documento, se emplearon herramientas de Inteligencia Artificial Generativa como ${formatNaturalList(toolDescriptions)}, en calidad de recursos auxiliares. Estos sirvieron para ${formatNaturalList(selectedSupportTypes)}. El autor(a) de: ${activity} examinó, cotejó y corrigió todo el material elaborado o mediado por dichos modelos de lenguaje. Asimismo, comprobó las citas empleadas y asume la responsabilidad total sobre los razonamientos, los enfoques, la veracidad de los datos y el resultado definitivo de la publicación. En ningún caso la inteligencia artificial generativa fungió como creadora del texto ni se le otorgó el estatus de referente o autoridad en el ámbito académico.`;
 
     if (resultEl) {
       resultEl.textContent = declarationText;
@@ -408,9 +408,6 @@ export function initAIDeclaration(container) {
       .filter(tool => tool.model)
       .map(tool => `${tool.name}: ${tool.model}`)
       .join('; ');
-    const datesForHistory = selectedTools.length === 1
-      ? selectedTools[0].date
-      : selectedTools.map(tool => `${tool.name}: ${tool.date}`).join('; ');
 
     try {
       const { error } = await saveCitation({
@@ -419,7 +416,7 @@ export function initAIDeclaration(container) {
         model_name_custom: toolNamesForHistory,
         organization_custom: developersForHistory,
         version: modelsForHistory,
-        consulta_fecha: datesForHistory,
+        consulta_fecha: selectedTools[0].date,
         tema: activity,
         prompt: selectedSupportTypes.join(', '),
         citation_text: declarationText
